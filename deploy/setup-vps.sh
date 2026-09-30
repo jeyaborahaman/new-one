@@ -46,7 +46,9 @@ fi
 sudo -u deploy npm run migrate
 sudo -u deploy pm2 startOrReload ecosystem.config.js --update-env
 sudo -u deploy pm2 save
-env PATH=$PATH pm2 startup systemd -u deploy --hp /home/deploy | tail -1 | bash
+# pm2 registers its systemd unit itself when run as root; never let this step stop the script
+env PATH=$PATH pm2 startup systemd -u deploy --hp /home/deploy >/dev/null 2>&1 || true
+systemctl enable pm2-deploy >/dev/null 2>&1 || true
 
 echo "== nginx + TLS"
 sed "s/api.example.com/$DOMAIN/g" $APP/deploy/nginx-api.conf > /etc/nginx/sites-available/jeyabo-api
