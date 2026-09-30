@@ -118,6 +118,12 @@ router.post('/:id/vote', validate({ params: idParam, body: z.object({ option_id:
   res.json((await hydrate([post], req.user.id))[0].poll);
 }));
 
+async function withAuthors(comments) {
+  const users = comments.length ? await db('users').whereIn('id', [...new Set(comments.map((c) => c.author_id))]).select('id', 'username', 'display_name') : [];
+  const U = Object.fromEntries(users.map((u) => [u.id, u]));
+  return comments.map((c) => ({ ...c, author: U[c.author_id] || null }));
+}
+
 router.post('/:id/comments', validate({ params: idParam, body: z.object({ body: z.string().trim().min(1).max(2000), parent_id: z.number().int().positive().optional(), gif_url: z.string().url().max(500).optional() }).strict() }), asyncHandler(async (req, res) => {
   const post = await canSee(req.params.id, req.user.id);
   await assertClean(req.body.body);
@@ -137,7 +143,7 @@ router.post('/:id/comments', validate({ params: idParam, body: z.object({ body: 
   const me = await db('users').where({ id: req.user.id }).first('display_name');
   const targets = new Set([post.author_id, parent?.author_id].filter((u) => u && u !== req.user.id));
   await Promise.all([...targets].map((u) => notify(u, 'comment', { title: me.display_name, body: req.body.body.slice(0, 100), data: { post_id: post.id, comment_id: id } })));
-  res.status(201).json(await db('comments').where({ id }).first());
+  res.status(201).json((await withAuthors([await db('comments').where({ id }).first()]))[0]);
 }));
 
 router.get('/:id/comments', validate({ params: idParam, query: pageQuery.extend({ parent_id: z.coerce.number().int().positive().optional() }) }), asyncHandler(async (req, res) => {
@@ -148,7 +154,7 @@ router.get('/:id/comments', validate({ params: idParam, query: pageQuery.extend(
   if (cursor) q.where('id', '>', cursor);
   const rows = await q;
   const data = rows.slice(0, limit);
-  res.json({ data, next_cursor: rows.length > limit ? data[data.length - 1].id : null });
+  res.json({ data: await withAuthors(data), next_cursor: rows.length > limit ? data[data.length - 1].id : null });
 }));
 
 module.exports = router;

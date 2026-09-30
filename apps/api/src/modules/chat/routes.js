@@ -17,7 +17,20 @@ router.use(authenticate);
 router.get('/', asyncHandler(async (req, res) => {
   const rows = await db('conversation_members as m').join('conversations as c', 'c.id', 'm.conversation_id').where('m.user_id', req.user.id)
     .orderByRaw('c.last_message_at is null, c.last_message_at desc').limit(100).select('c.id', 'c.type', 'c.title', 'c.last_message_at', 'm.last_read_message_id');
-  res.json({ data: rows });
+  const ids = rows.map((r) => r.id);
+  if (!ids.length) return res.json({ data: [] });
+  // Peer (for direct chats), last message preview and unread count, in three batched queries.
+  const peers = await db('conversation_members as pm').join('users as u', 'u.id', 'pm.user_id').whereIn('pm.conversation_id', ids).whereNot('pm.user_id', req.user.id).select('pm.conversation_id', 'u.id', 'u.username', 'u.display_name');
+  const lastIds = await db('messages').whereIn('conversation_id', ids).whereNull('deleted_at').groupBy('conversation_id').select('conversation_id', db.raw('max(id) as id'));
+  const lasts = lastIds.length ? await db('messages').whereIn('id', lastIds.map((l) => l.id)).select('id', 'conversation_id', 'sender_id', 'type', 'body', 'created_at') : [];
+  const P = {}; peers.forEach((p) => { (P[p.conversation_id] ||= []).push(p); });
+  const L = Object.fromEntries(lasts.map((l) => [l.conversation_id, l]));
+  const data = await Promise.all(rows.map(async (r) => {
+    const unread = Number((await db('messages').where({ conversation_id: r.id }).whereNot({ sender_id: req.user.id }).where('id', '>', r.last_read_message_id).whereNull('deleted_at').count({ c: '*' }).first()).c);
+    const peer = r.type === 'direct' ? P[r.id]?.[0] : null;
+    return { ...r, title: r.type === 'direct' ? peer?.display_name || 'Unknown' : r.title, peer: peer ? { id: peer.id, username: peer.username, display_name: peer.display_name } : null, last_message: L[r.id] ? { sender_id: L[r.id].sender_id, type: L[r.id].type, body: L[r.id].body, created_at: L[r.id].created_at } : null, unread };
+  }));
+  res.json({ data });
 }));
 
 router.post('/', validate({ body: z.discriminatedUnion('type', [

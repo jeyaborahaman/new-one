@@ -21,6 +21,10 @@ test('direct chat is unique, membership enforced, sends are idempotent', async (
   await api().post(`/v1/conversations/${cid}/read`).set(b.auth).send({ up_to_id: m1.body.id }).expect(204);
   const list = await api().get('/v1/conversations').set(b.auth).expect(200);
   assert.equal(list.body.data[0].last_read_message_id, m1.body.id);
+  assert.equal(list.body.data[0].title, a.user.display_name); // direct chat is titled by the peer
+  assert.equal(list.body.data[0].last_message.body, 'hi');
+  assert.equal(list.body.data[0].unread, 0);
+  assert.equal((await api().get('/v1/conversations').set(a.auth)).body.data[0].unread, 0); // own messages are never unread
   const g = await api().post('/v1/conversations').set(a.auth).send({ type: 'group', title: 'Crew', member_ids: [b.id, c.id] }).expect(201);
   await api().post(`/v1/conversations/${g.body.id}/messages`).set(c.auth).send({ client_id: crypto.randomUUID(), body: 'yo' }).expect(201);
 });

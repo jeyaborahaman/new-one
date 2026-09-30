@@ -22,6 +22,7 @@ test('post, feed pagination, reactions and nested comments', async () => {
   const c1 = await api().post(`/v1/posts/${post.id}/comments`).set(b.auth).send({ body: 'first' }).expect(201);
   const c2 = await api().post(`/v1/posts/${post.id}/comments`).set(a.auth).send({ body: 'reply', parent_id: c1.body.id }).expect(201);
   assert.equal(c2.body.depth, 1);
+  assert.equal(c2.body.author.id, a.id); // comments carry their author
   const top = await api().get(`/v1/posts/${post.id}/comments`).set(b.auth).expect(200);
   assert.equal(top.body.data.length, 1);
   const replies = await api().get(`/v1/posts/${post.id}/comments?parent_id=${c1.body.id}`).set(b.auth).expect(200);
