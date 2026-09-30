@@ -1,4 +1,5 @@
-require('dotenv').config();
+// Absolute path: the knex CLI changes the working directory, so a bare config() would miss apps/api/.env
+require('dotenv').config({ path: require('path').join(__dirname, '../../.env'), quiet: true });
 const { z } = require('zod');
 
 const schema = z.object({
