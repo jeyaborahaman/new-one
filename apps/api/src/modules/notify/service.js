@@ -12,7 +12,7 @@ async function pushEnabled(userId, type) {
 async function push(userId, type, { title, body, data = {} }) {
   if (!(await pushEnabled(userId, type))) return;
   const tokens = (await db('devices').where({ user_id: userId }).select('token')).map((d) => d.token);
-  const dead = await fcm.push(tokens, { title, body, data: { type, ...data } });
+  const dead = await fcm.push(tokens, { title, body, data: { type, title, ...data } });
   if (dead.length) await db('devices').whereIn('token', dead).del();
 }
 /** Inbox row + live socket event + push. */

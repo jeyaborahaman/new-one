@@ -78,5 +78,5 @@ class ApiClient {
   Future<dynamic> post(String p, {Object? body}) => _run(() => dio.post(p, data: body));
   Future<dynamic> put(String p, {Object? body}) => _run(() => dio.put(p, data: body));
   Future<dynamic> patch(String p, {Object? body}) => _run(() => dio.patch(p, data: body));
-  Future<dynamic> delete(String p) => _run(() => dio.delete(p));
+  Future<dynamic> delete(String p, {Object? body}) => _run(() => dio.delete(p, data: body));
 }

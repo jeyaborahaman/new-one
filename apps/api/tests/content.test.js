@@ -173,6 +173,8 @@ test('notifications: devices, push, prefs, offline message push', async () => {
   await api().post(`/v1/conversations/${conv.id}/messages`).set(a.auth).send({ client_id: require('crypto').randomUUID(), body: 'ping' }).expect(201);
   assert.equal(fcm.sent.length, 1); // b has no live socket => push
   assert.deepEqual(fcm.sent[0].tokens, [token]); assert.equal(fcm.sent[0].body, 'ping');
+  assert.equal(fcm.sent[0].data.conversation_id, conv.id); // the app opens this chat on tap
+  assert.equal(fcm.sent[0].data.title, a.user.display_name);
   await api().put('/v1/notifications/prefs').set(b.auth).send({ message: false }).expect(204);
   await api().post(`/v1/conversations/${conv.id}/messages`).set(a.auth).send({ client_id: require('crypto').randomUUID(), body: 'again' }).expect(201);
   assert.equal(fcm.sent.length, 1); // muted

@@ -11,6 +11,7 @@ double _lum(Color c) {
 double contrast(Color a, Color b) { final x = _lum(a), y = _lum(b); return (max(x, y) + 0.05) / (min(x, y) + 0.05); }
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
   for (final entry in {'light': JeyaboTokens.light, 'dark': JeyaboTokens.dark}.entries) {
     final t = entry.value;
     test('${entry.key}: text pairs meet WCAG AA (4.5:1)', () {

@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'network/api_client.dart';
 import 'network/socket_service.dart';
 import 'models.dart';
+import 'push_service.dart';
 
 final tokenStoreProvider = Provider<TokenStore>((_) => TokenStore());
 final socketProvider = Provider<SocketService>((ref) { final s = SocketService(); ref.onDispose(s.disconnect); return s; });
@@ -18,6 +19,29 @@ class ThemeModeController extends Notifier<ThemeMode> {
   ThemeMode build() => ThemeMode.system;
   void set(ThemeMode m) => state = m;
 }
+/// Decouples push handling from the router: the service asks for a route, the app widget performs it.
+class RouteRequest extends Notifier<String?> {
+  @override
+  String? build() => null;
+  void request(String route) => state = route;
+  void clear() => state = null;
+}
+final routeRequestProvider = NotifierProvider<RouteRequest, String?>(RouteRequest.new);
+
+class ForegroundBanner extends Notifier<({String title, String body})?> {
+  @override
+  ({String title, String body})? build() => null;
+  void show(String title, String body) => state = (title: title, body: body);
+}
+final bannerProvider = NotifierProvider<ForegroundBanner, ({String title, String body})?>(ForegroundBanner.new);
+
+final pushBackendProvider = Provider<PushBackend>((_) => FirebasePushBackend());
+final pushServiceProvider = Provider<PushService>((ref) => PushService(
+      ref.watch(apiProvider), ref.watch(pushBackendProvider),
+      onOpenRoute: (r) => ref.read(routeRequestProvider.notifier).request(r),
+      onForegroundMessage: (t, b) => ref.read(bannerProvider.notifier).show(t, b),
+    ));
+
 final themeModeProvider = NotifierProvider<ThemeModeController, ThemeMode>(ThemeModeController.new);
 
 enum AuthStatus { unknown, signedOut, signedIn }
@@ -50,6 +74,7 @@ class AuthController extends Notifier<AuthState> {
   Future<void> _enter(User u) async {
     state = AuthState(AuthStatus.signedIn, u);
     ref.read(socketProvider).connect(_store.access!);
+    unawaited(ref.read(pushServiceProvider).start()); // optional; never blocks or fails sign-in
   }
 
   Future<LoginResult> _finish(dynamic r) async {
@@ -71,12 +96,13 @@ class AuthController extends Notifier<AuthState> {
   Future<void> refreshUser() async { if (state.status == AuthStatus.signedIn) state = AuthState(AuthStatus.signedIn, User.fromJson(await _api.get('/users/me'))); }
 
   Future<void> logout() async {
+    await ref.read(pushServiceProvider).stop(); // needs the access token, so it runs before we clear it
     final r = _store.refresh;
     if (r != null) { try { await _api.post('/auth/logout', body: {'refreshToken': r}); } catch (_) {} }
     forceSignedOut();
     await _store.clear();
   }
 
-  void forceSignedOut() { ref.read(socketProvider).disconnect(); state = const AuthState(AuthStatus.signedOut); }
+  void forceSignedOut() { unawaited(ref.read(pushServiceProvider).stop()); ref.read(socketProvider).disconnect(); state = const AuthState(AuthStatus.signedOut); }
 }
 final authProvider = NotifierProvider<AuthController, AuthState>(AuthController.new);

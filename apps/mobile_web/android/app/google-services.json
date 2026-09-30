@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "415271614284",
+    "project_id": "call-1c522",
+    "storage_bucket": "call-1c522.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:415271614284:android:4165dd40bfe51fa16f01e9",
+        "android_client_info": {
+          "package_name": "com.jeyabo.jeyabo"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB3r6GkuaIrSXpYyzNWIdguT6OmbiWqEA8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
