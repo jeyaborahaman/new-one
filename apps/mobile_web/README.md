@@ -23,7 +23,7 @@ The app registers its device token with the API after sign-in, removes it on sig
 | Platform | Status | What is still needed |
 | --- | --- | --- |
 | Android | Wired (`google-services.json`, Gradle plugin). Not built or tested here (no Android SDK). | Build once and send a test message from the Firebase console |
-| Web | Wired (service worker, config) but off until you set the key | Firebase console > Cloud Messaging > Web Push certificates > Generate key pair, then build with `--dart-define=FIREBASE_VAPID_KEY=<key>` |
+| Web | Wired with the VAPID key. Not verified end to end here (the sandbox cannot reach Google's Firebase scripts); the app still works when they fail to load | Open the deployed site, allow notifications, and check that a row appears in the `devices` table |
 | iOS | Not wired | `GoogleService-Info.plist` and an APNs key from your Apple developer account |
 | Server | Sends via FCM once configured | Service account JSON in `FCM_SERVICE_ACCOUNT` on the API server (Project settings > Service accounts). This one is a real secret: never commit or paste it. |
 

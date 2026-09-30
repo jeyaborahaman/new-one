@@ -5,7 +5,8 @@ import 'package:flutter/foundation.dart' show kIsWeb, defaultTargetPlatform, Tar
 /// These values identify the app to Google; they are not secrets (access is enforced by Firebase rules and
 /// API-key restrictions). The service-account key used by the backend is the real secret and never lives here.
 class JeyaboFirebase {
-  static const webVapidKey = String.fromEnvironment('FIREBASE_VAPID_KEY'); // Firebase console > Cloud Messaging > Web Push certificates
+  // Public web push key (Firebase console > Cloud Messaging > Web Push certificates). Override with --dart-define=FIREBASE_VAPID_KEY.
+  static const webVapidKey = String.fromEnvironment('FIREBASE_VAPID_KEY', defaultValue: 'BNpElXKeWAMSv0N0zPFFkaja5wsJi4osf4-5oLck2KWW59D5EhjMeZwnUwys9icMxBmIA2iPAISFvCUOkv5UAvU');
 
   static const web = FirebaseOptions(
     apiKey: 'AIzaSyDugZRuGHcxqgq83LKMR9MdjbFj2ai2sNg',
