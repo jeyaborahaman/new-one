@@ -1,4 +1,6 @@
-const router = require('express').Router();
+const express = require('express');
+const router = express.Router();
+const env = require('../../config/env');
 const crypto = require('crypto');
 const { z } = require('zod');
 const db = require('../../db/knex');
@@ -16,6 +18,19 @@ const RULES = {
   file: { max: 50 * MB, mimes: { 'application/pdf': 'pdf', 'application/zip': 'zip', 'text/plain': 'txt' } },
 };
 const mediaView = (m) => ({ id: m.id, kind: m.kind, mime: m.mime, size_bytes: Number(m.size_bytes), status: m.status, url: m.status === 'ready' ? r2.publicUrl(m.r2_key) : null });
+// Development-only upload target (R2_DRIVER=local). The signed URL is the credential, so this is mounted before auth.
+if (env.R2_DRIVER === 'local') {
+  router.put('/local/*key', express.raw({ type: () => true, limit: '500mb' }), asyncHandler(async (req, res) => {
+    const key = [].concat(req.params.key).join('/');
+    r2.verifyLocalSignature(key, req.query.exp, req.query.sig);
+    const m = await db('media').where({ r2_key: key }).first();
+    if (!m || m.status !== 'uploading') throw err.notFound('Unknown upload');
+    if (!Buffer.isBuffer(req.body) || req.body.length !== Number(m.size_bytes)) throw err.badRequest('Body size does not match the declared size');
+    if ((req.headers['content-type'] || '').split(';')[0] !== m.mime) throw err.badRequest('Content-Type does not match the declared type');
+    r2.saveLocal(key, req.body);
+    res.status(200).end();
+  }));
+}
 router.use(authenticate);
 
 router.post('/uploads', validate({ body: z.object({ kind: z.enum(Object.keys(RULES)), mime: z.string().max(100), size: z.number().int().positive() }).strict() }), asyncHandler(async (req, res) => {

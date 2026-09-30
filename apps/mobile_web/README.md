@@ -14,11 +14,11 @@ Do not pass `--no-web-resources-cdn` for production web builds: without the CDN 
 
 ## What works (verified in a real browser against the real API)
 
-Sign in, register, phone OTP, forgot password, 2FA challenge; feed with infinite scroll, pull to refresh, story tray, polls, hashtags and mentions, five reactions (long-press), nested comments; text/poll composer with visibility and scheduling; reels player with trending tab; chat list with unread badges, live chat with typing indicator and exactly-once send (falls back to REST when the socket is down); search and friend suggestions; profile, follow, edit profile; wallet, daily reward, badges, challenges, leaderboard, referral code, notifications; Lucky Draw (only shown when the server enables it); light/dark/auto theme; responsive navigation rail on wide screens.
+Photo and video posts, short reels and 24-hour stories (pick, upload with progress, view, react, see who viewed); sign in, register, phone OTP, forgot password, 2FA challenge; feed with infinite scroll, pull to refresh, story tray, polls, hashtags and mentions, five reactions (long-press), nested comments; text/poll composer with visibility and scheduling; reels player with trending tab; chat list with unread badges, live chat with typing indicator and exactly-once send (falls back to REST when the socket is down); search and friend suggestions; profile, follow, edit profile; wallet, daily reward, badges, challenges, leaderboard, referral code, notifications; Lucky Draw (only shown when the server enables it); light/dark/auto theme; responsive navigation rail on wide screens.
 
 ## Not built yet
 
-- Photo/video picking and upload (the API is ready: presigned R2), so stories, image posts and reel uploads cannot be created from the app yet.
+- Camera capture on web (gallery only there); video upload was verified by unit and API tests, not in a browser (the test browser has no video codecs).
 - Audio/video calls (needs the Agora SDK and platform setup), voice notes, group creation UI, communities/pages screens.
 - Push notifications (needs your Firebase project files: `google-services.json`, `GoogleService-Info.plist`).
 - Google and Apple sign-in buttons (API is ready; needs your OAuth client IDs).

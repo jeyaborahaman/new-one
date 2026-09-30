@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/models.dart';
 import '../../core/theme/tokens.dart';
 import '../../core/widgets/common.dart';
+import '../../core/providers.dart';
 import 'feed_state.dart';
 import 'post_card.dart';
 
@@ -55,21 +56,30 @@ class _State extends ConsumerState<FeedScreen> {
   }
 }
 
-class _StoryTray extends StatelessWidget {
+class _StoryTray extends ConsumerWidget {
   const _StoryTray(this.groups);
   final List<StoryGroup> groups;
   @override
-  Widget build(BuildContext context) {
-    if (groups.isEmpty) return const SizedBox.shrink();
+  Widget build(BuildContext context, WidgetRef ref) {
+    final me = ref.watch(authProvider).user;
+    final hasMine = groups.any((g) => g.user.id == me?.id);
     return SizedBox(
-      height: 92,
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal, itemCount: groups.length, separatorBuilder: (_, _) => const SizedBox(width: Sp.s3),
-        itemBuilder: (c, i) {
-          final g = groups[i];
-          return SizedBox(width: 68, child: Column(children: [StoryRing(initials: g.user.initials, seen: g.allSeen, label: g.user.displayName), const SizedBox(height: 4), Text(g.user.displayName.split(' ').first, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 12))]));
-        },
+      height: 96,
+      child: ListView(
+        scrollDirection: Axis.horizontal,
+        children: [
+          if (!hasMine) _tile(context, label: 'Your story', child: Stack(clipBehavior: Clip.none, children: [
+            JAvatar(me?.initials ?? '?', size: 60),
+            Positioned(right: -2, bottom: -2, child: Container(decoration: BoxDecoration(color: context.tk.brand, shape: BoxShape.circle, border: Border.all(color: context.tk.bg, width: 2)), child: Icon(Icons.add, size: 18, color: context.tk.onBrand))),
+          ]), onTap: () => context.push('/story/new'), semantic: 'Add to your story'),
+          for (var i = 0; i < groups.length; i++) _tile(context, label: groups[i].user.id == me?.id ? 'Your story' : groups[i].user.displayName.split(' ').first, child: StoryRing(initials: groups[i].user.initials, seen: groups[i].allSeen, label: groups[i].user.displayName), onTap: () => context.push('/story/view', extra: (groups, i)), semantic: '${groups[i].user.displayName} story'),
+        ],
       ),
     );
   }
+
+  Widget _tile(BuildContext context, {required String label, required Widget child, required VoidCallback onTap, required String semantic}) => Padding(
+        padding: const EdgeInsets.only(right: Sp.s3),
+        child: Semantics(button: true, label: semantic, excludeSemantics: true, onTap: onTap, child: InkWell(borderRadius: BorderRadius.circular(Rd.md), onTap: onTap, child: SizedBox(width: 68, child: Column(children: [child, const SizedBox(height: 4), Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 12))])))),
+      );
 }

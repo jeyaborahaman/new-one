@@ -5,6 +5,7 @@ import '../../core/theme/tokens.dart';
 import '../../core/widgets/common.dart';
 import 'comments_sheet.dart';
 import 'feed_state.dart';
+import 'inline_video.dart';
 
 class PostCard extends ConsumerWidget {
   const PostCard(this.post, {super.key});
@@ -36,6 +37,7 @@ class PostCard extends ConsumerWidget {
             padding: const EdgeInsets.only(top: Sp.s3),
             child: ClipRRect(borderRadius: BorderRadius.circular(Rd.md), child: Image.network(post.mediaUrl!, fit: BoxFit.cover, width: double.infinity, height: 260, loadingBuilder: (c, w, p) => p == null ? w : const Skeleton(height: 260), errorBuilder: (c, e, s) => Container(height: 120, color: t.surfaceRaised, alignment: Alignment.center, child: Text('Image unavailable', style: TextStyle(color: t.inkMuted))))),
           ),
+          if (post.mediaUrl != null && post.mediaKind == 'video') Padding(padding: const EdgeInsets.only(top: Sp.s3), child: InlineVideo(url: post.mediaUrl!, title: post.videoTitle)),
           if (post.pollOptions.isNotEmpty) _Poll(post: post, onVote: (id) => feed.vote(post, id).catchError((e) { if (context.mounted) toast(context, e.toString()); })),
           const SizedBox(height: Sp.s3),
           Row(children: [

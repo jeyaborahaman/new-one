@@ -7,7 +7,9 @@ import '../core/widgets/common.dart';
 import '../features/auth/auth_screens.dart';
 import '../features/chat/chat_screens.dart';
 import '../features/feed/composer_screen.dart';
+import '../core/models.dart';
 import '../features/feed/feed_screen.dart';
+import '../features/feed/story_screens.dart';
 import '../features/profile/profile_screens.dart';
 import '../features/reels/reels_screen.dart';
 import '../features/search/search_screen.dart';
@@ -49,6 +51,8 @@ final routerProvider = Provider<GoRouter>((ref) {
           StatefulShellBranch(routes: [GoRoute(path: '/me', builder: (_, _) => const MyProfileScreen())]),
         ],
       ),
+      GoRoute(path: '/story/new', builder: (_, _) => const StoryComposerScreen()),
+      GoRoute(path: '/story/view', builder: (_, s) { final (groups, start) = s.extra as (List<StoryGroup>, int); return StoryViewerScreen(groups: groups, start: start); }),
       GoRoute(path: '/chat/:id', builder: (_, s) => ChatThreadScreen(id: int.parse(s.pathParameters['id']!), title: s.uri.queryParameters['title'] ?? 'Chat')),
       GoRoute(path: '/user/:id', builder: (_, s) => UserProfileScreen(id: int.parse(s.pathParameters['id']!))),
       GoRoute(path: '/search', builder: (_, s) => SearchScreen(pickUser: s.uri.queryParameters['pick'] == '1')),

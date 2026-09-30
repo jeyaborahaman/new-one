@@ -42,6 +42,10 @@ npm test                  # 11 integration tests, in-memory SQLite
 | SMS / email | replace the console drivers in `src/integrations/sms.js` and `mailer.js` with your provider |
 | AI translation / moderation | `AI_PROVIDER=anthropic`, `ANTHROPIC_API_KEY` |
 
+## Local development without R2
+
+Set `R2_DRIVER=local` and `API_PUBLIC_URL=http://localhost:4000`: uploads are stored in `apps/api/.uploads` and served from `/uploads`, using the same presigned-URL flow the app uses in production. The server refuses to start with this driver when `NODE_ENV=production`.
+
 ## Known gaps
 
 - Tested on SQLite only; run `npm run migrate` against a real MySQL 8 before relying on it.

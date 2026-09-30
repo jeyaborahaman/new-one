@@ -13,6 +13,7 @@ function createApp() {
   app.use(helmet());
   app.use(cors({ origin: env.CORS_ORIGINS.split(',').filter(Boolean) }));
   app.use(express.json({ limit: '100kb' }));
+  if (env.R2_DRIVER === 'local') app.use('/uploads', express.static(require('./integrations/r2').UPLOAD_DIR, { maxAge: '1h', setHeaders: (res) => res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin') }));
   app.get('/health', (_req, res) => res.json({ ok: true }));
 
   const v1 = express.Router();

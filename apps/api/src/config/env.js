@@ -18,7 +18,8 @@ const schema = z.object({
   REDIS_URL: z.string().optional(),
   ENCRYPTION_KEY: z.string().optional(), // 32+ chars; falls back to JWT_SECRET
   APP_NAME: z.string().default('Jeyabo'),
-  R2_DRIVER: z.enum(['r2', 'fake']).default('r2'),
+  R2_DRIVER: z.enum(['r2', 'fake', 'local']).default('r2'), // 'local' stores files on this server's disk: development only
+  API_PUBLIC_URL: z.string().default('http://localhost:4000'), // used to build URLs for the local driver
   R2_ACCOUNT_ID: z.string().optional(), R2_ACCESS_KEY: z.string().optional(), R2_SECRET: z.string().optional(),
   R2_BUCKET: z.string().default('jeyabo-media'),
   CDN_BASE_URL: z.string().default('https://cdn.jeyabo.example'),
@@ -35,6 +36,10 @@ const schema = z.object({
 const parsed = schema.safeParse(process.env);
 if (!parsed.success) {
   console.error('Invalid environment:', parsed.error.flatten().fieldErrors);
+  process.exit(1);
+}
+if (parsed.data.NODE_ENV === 'production' && parsed.data.R2_DRIVER !== 'r2') {
+  console.error('R2_DRIVER must be "r2" in production');
   process.exit(1);
 }
 module.exports = parsed.data;
