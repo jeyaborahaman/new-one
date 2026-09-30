@@ -3,6 +3,7 @@
 #   DOMAIN=api.example.com REPO=https://github.com/jeyaborahaman/new-one.git BRANCH=claude/jeyabo-social-network-fs3aq0 bash setup-vps.sh
 set -euo pipefail
 : "${DOMAIN:?set DOMAIN}"
+WEB_DOMAIN="${WEB_DOMAIN:-app.${DOMAIN#api.}}"   # where the web app is served; the API only accepts browser calls from here
 REPO="${REPO:-https://github.com/jeyaborahaman/new-one.git}"; BRANCH="${BRANCH:-claude/jeyabo-social-network-fs3aq0}"
 APP=/srv/jeyabo
 
@@ -39,7 +40,7 @@ cd $APP/apps/api
 sudo -u deploy npm ci --omit=dev
 if [ $FIRST_RUN = 1 ]; then
   cp .env.example .env
-  sed -i "s|^NODE_ENV=.*|NODE_ENV=production|; s|^DB_PASSWORD=.*|DB_PASSWORD=$DB_PASS|; s|^JWT_SECRET=.*|JWT_SECRET=$(openssl rand -hex 48)|; s|^REDIS_URL=.*|REDIS_URL=redis://:$REDIS_PASS@127.0.0.1:6379|; s|^CORS_ORIGINS=.*|CORS_ORIGINS=https://$DOMAIN|; s|^API_PUBLIC_URL=.*||" .env
+  sed -i "s|^NODE_ENV=.*|NODE_ENV=production|; s|^DB_PASSWORD=.*|DB_PASSWORD=$DB_PASS|; s|^JWT_SECRET=.*|JWT_SECRET=$(openssl rand -hex 48)|; s|^REDIS_URL=.*|REDIS_URL=redis://:$REDIS_PASS@127.0.0.1:6379|; s|^CORS_ORIGINS=.*|CORS_ORIGINS=https://$WEB_DOMAIN|; s|^API_PUBLIC_URL=.*||" .env
   echo "API_PUBLIC_URL=https://$DOMAIN" >> .env
   chown deploy:deploy .env; chmod 600 .env
 fi
