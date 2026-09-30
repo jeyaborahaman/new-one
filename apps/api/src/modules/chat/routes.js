@@ -2,6 +2,7 @@ const router = require('express').Router();
 const { z } = require('zod');
 const db = require('../../db/knex');
 const validate = require('../../middleware/validate');
+const { err } = require('../../utils/errors');
 const { authenticate } = require('../../middleware/auth');
 const asyncHandler = require('../../utils/asyncHandler');
 const { pageQuery, page } = require('../../utils/pagination');
@@ -24,6 +25,7 @@ router.post('/', validate({ body: z.discriminatedUnion('type', [
   z.object({ type: z.literal('group'), title: z.string().min(1).max(100), member_ids: z.array(z.number().int().positive()).max(1000) }).strict(),
 ]) }), asyncHandler(async (req, res) => {
   const c = req.body.type === 'direct' ? await svc.openDirect(req.user.id, req.body.user_id) : await svc.createGroup(req.user.id, req.body.title, req.body.member_ids);
+  realtime.joinConversation(await svc.memberIds(c.id), c.id); // live sockets start receiving immediately
   res.status(201).json(c);
 }));
 
@@ -44,6 +46,45 @@ router.post('/:id/messages', validate({ params: idParam, body: messageBody }), a
 
 router.post('/:id/read', validate({ params: idParam, body: z.object({ up_to_id: z.number().int().positive() }).strict() }), asyncHandler(async (req, res) => {
   await svc.markRead(req.params.id, req.user.id, req.body.up_to_id);
+  res.status(204).end();
+}));
+
+// Group admin controls: rename, add, remove, promote/demote. Owners and admins only; owner is untouchable.
+const groupAdmin = async (req) => {
+  const c = await db('conversations').where({ id: req.params.id, type: 'group' }).first();
+  if (!c) throw err.notFound('Group not found');
+  const m = await svc.assertMember(c.id, req.user.id);
+  if (!['owner', 'admin'].includes(m.role)) throw err.forbidden('Group admins only');
+  return { c, m };
+};
+router.patch('/:id', validate({ params: idParam, body: z.object({ title: z.string().trim().min(1).max(100) }).strict() }), asyncHandler(async (req, res) => {
+  await groupAdmin(req); await db('conversations').where({ id: req.params.id }).update({ title: req.body.title }); res.status(204).end();
+}));
+router.post('/:id/members', validate({ params: idParam, body: z.object({ user_ids: z.array(z.number().int().positive()).min(1).max(200) }).strict() }), asyncHandler(async (req, res) => {
+  await groupAdmin(req);
+  const users = await db('users').whereIn('id', req.body.user_ids).where({ status: 'active' }).select('id');
+  await db('conversation_members').insert(users.map((u) => ({ conversation_id: req.params.id, user_id: u.id }))).onConflict(['conversation_id', 'user_id']).ignore();
+  realtime.joinConversation(users.map((u) => u.id), req.params.id);
+  res.status(204).end();
+}));
+router.patch('/:id/members/:uid', validate({ params: idParam.extend({ uid: z.coerce.number().int().positive() }), body: z.object({ role: z.enum(['admin', 'member']) }).strict() }), asyncHandler(async (req, res) => {
+  const { m } = await groupAdmin(req);
+  if (m.role !== 'owner') throw err.forbidden('Only the owner changes roles');
+  const t = await svc.assertMember(req.params.id, req.params.uid).catch(() => null);
+  if (!t || t.role === 'owner') throw err.badRequest('Invalid member');
+  await db('conversation_members').where({ conversation_id: req.params.id, user_id: req.params.uid }).update({ role: req.body.role }); res.status(204).end();
+}));
+router.delete('/:id/members/:uid', validate({ params: idParam.extend({ uid: z.coerce.number().int().positive() }) }), asyncHandler(async (req, res) => {
+  const c = await db('conversations').where({ id: req.params.id, type: 'group' }).first();
+  if (!c) throw err.notFound('Group not found');
+  const me = await svc.assertMember(c.id, req.user.id);
+  const target = await db('conversation_members').where({ conversation_id: c.id, user_id: req.params.uid }).first();
+  if (!target) throw err.notFound('Member not found');
+  const leaving = req.params.uid === req.user.id;
+  if (!leaving && (!['owner', 'admin'].includes(me.role) || target.role === 'owner' || (target.role === 'admin' && me.role !== 'owner'))) throw err.forbidden('Not allowed');
+  if (leaving && target.role === 'owner') throw err.conflict('Owner cannot leave; delete or transfer the group');
+  await db('conversation_members').where({ conversation_id: c.id, user_id: req.params.uid }).del();
+  realtime.leaveConversation(req.params.uid, c.id);
   res.status(204).end();
 }));
 

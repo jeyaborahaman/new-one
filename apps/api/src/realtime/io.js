@@ -1,4 +1,6 @@
 const { Server } = require('socket.io');
+const { createAdapter } = require('@socket.io/redis-adapter');
+const redis = require('../config/redis');
 const db = require('../db/knex');
 const env = require('../config/env');
 const { verifyAccess } = require('../middleware/auth');
@@ -9,6 +11,7 @@ const { messageBody } = require('../modules/chat/routes');
 function attach(httpServer) {
   const io = new Server(httpServer, { cors: { origin: env.CORS_ORIGINS.split(',').filter(Boolean) }, maxHttpBufferSize: 1e5 });
   bus.setIo(io);
+  if (redis) io.adapter(createAdapter(redis, redis.duplicate())); // fan-out across nodes
 
   io.use(async (socket, next) => {
     try {
@@ -31,7 +34,7 @@ function attach(httpServer) {
         const p = messageBody.parse(payload?.message ?? payload);
         const conversationId = Number(payload.conversation_id);
         const { message, created } = await chat.sendMessage({ conversationId, senderId: socket.userId, clientId: p.client_id, type: p.type, body: p.body, mediaId: p.media_id });
-        if (created) io.to(`c:${conversationId}`).emit('message:new', message);
+        if (created) await bus.publishMessage(message);
         ack({ ok: true, message });
       } catch (e) { ack({ ok: false, error: e.message }); }
     });

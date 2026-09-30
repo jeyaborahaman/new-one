@@ -14,6 +14,7 @@ function verifyAccess(token) {
 }
 
 async function authenticate(req, _res, next) {
+  if (req.user) return next(); // already authenticated by an earlier router on this request
   try {
     const h = req.headers.authorization || '';
     if (!h.startsWith('Bearer ')) throw err.unauthorized();

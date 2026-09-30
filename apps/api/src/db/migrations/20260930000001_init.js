@@ -1,6 +1,10 @@
 /** Portable schema (MySQL 8 in production, SQLite in tests). Mirrors the design-system blueprint. */
+// SQLite (tests) would store CURRENT_TIMESTAMP as text, which cannot be compared with JS Dates
+// (bound as epoch ms). Use epoch-ms defaults there; MySQL keeps native timestamps.
+const NOW = (knex) => (knex.client.config.client === 'better-sqlite3' ? knex.raw("(cast(strftime('%s','now') as integer) * 1000)") : knex.fn.now());
+
 exports.up = async (knex) => {
-  const ts = (t) => t.timestamp('created_at').defaultTo(knex.fn.now());
+  const ts = (t) => t.timestamp('created_at').defaultTo(NOW(knex));
 
   await knex.schema.createTable('users', (t) => {
     t.bigIncrements('id');

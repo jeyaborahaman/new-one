@@ -23,11 +23,14 @@ async function applyCoins(userId, amount, reason, { refType, refId, idempotencyK
   return outer ? run(outer) : db.transaction(run);
 }
 
-async function grantXp(userId, xp) {
+/** Records an xp event, updates level, then evaluates badges. Never throws into the caller's request. */
+async function grantXp(userId, xp, action = 'misc') {
+  await db('xp_events').insert({ user_id: userId, action, xp });
   await db('users').where({ id: userId }).update({ xp: db.raw('xp + ?', [xp]) });
   const u = await db('users').where({ id: userId }).first('xp', 'level');
   const level = levelFor(u.xp);
   if (level !== u.level) await db('users').where({ id: userId }).update({ level });
+  await require('../engagement/service').checkBadges(userId).catch(() => {});
 }
 
 const utcDay = (d = new Date()) => d.toISOString().slice(0, 10);
@@ -35,7 +38,7 @@ const utcDay = (d = new Date()) => d.toISOString().slice(0, 10);
 async function claimDaily(userId) {
   const today = utcDay();
   const yesterday = utcDay(new Date(Date.now() - 864e5));
-  return db.transaction(async (trx) => {
+  const out = await db.transaction(async (trx) => {
     if (await trx('daily_rewards').where({ user_id: userId, day: today }).first()) throw err.conflict('Already claimed today');
     const prev = await trx('daily_rewards').where({ user_id: userId, day: yesterday }).first('streak');
     const streak = (prev?.streak || 0) + 1;
@@ -44,6 +47,8 @@ async function claimDaily(userId) {
     const tx = await applyCoins(userId, coins, 'daily', { trx, idempotencyKey: `daily:${userId}:${today}` });
     return { streak, coins, balance: tx.balance_after };
   });
+  await grantXp(userId, 5, 'daily');
+  return out;
 }
 
 module.exports = { applyCoins, grantXp, claimDaily, levelFor };

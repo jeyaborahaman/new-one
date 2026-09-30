@@ -15,6 +15,20 @@ const schema = z.object({
   REFRESH_TTL_DAYS: z.coerce.number().default(30),
   CORS_ORIGINS: z.string().default(''),
   LUCKY_DRAW_ENABLED: z.string().default('false').transform((v) => v === 'true'),
+  REDIS_URL: z.string().optional(),
+  ENCRYPTION_KEY: z.string().optional(), // 32+ chars; falls back to JWT_SECRET
+  APP_NAME: z.string().default('Jeyabo'),
+  R2_DRIVER: z.enum(['r2', 'fake']).default('r2'),
+  R2_ACCOUNT_ID: z.string().optional(), R2_ACCESS_KEY: z.string().optional(), R2_SECRET: z.string().optional(),
+  R2_BUCKET: z.string().default('jeyabo-media'),
+  CDN_BASE_URL: z.string().default('https://cdn.jeyabo.example'),
+  FCM_SERVICE_ACCOUNT: z.string().optional(), // JSON string; unset = push is logged only
+  AGORA_APP_ID: z.string().optional(), AGORA_CERT: z.string().optional(),
+  GOOGLE_CLIENT_ID: z.string().optional(), APPLE_CLIENT_ID: z.string().optional(),
+  SMS_DRIVER: z.enum(['console', 'memory']).default('console'),
+  AI_PROVIDER: z.enum(['none', 'anthropic']).default('none'),
+  ANTHROPIC_API_KEY: z.string().optional(),
+  AI_MODEL: z.string().default('claude-haiku-4-5-20251001'),
   LUCKY_DRAW_REGIONS: z.string().default('').transform((v) => v.split(',').map((s) => s.trim().toUpperCase()).filter(Boolean)),
 });
 

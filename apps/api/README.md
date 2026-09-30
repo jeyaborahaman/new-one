@@ -10,18 +10,41 @@ npm run dev               # http://localhost:4000, GET /health
 npm test                  # 11 integration tests, in-memory SQLite
 ```
 
-## Implemented (v0.1)
+## Implemented
 
-| Area | Endpoints |
+| Area | What it does |
 | --- | --- |
-| Auth | `POST /v1/auth/register\|login\|refresh\|logout` (argon2id, 15 min JWT, rotating refresh with reuse detection) |
-| Users | `GET/PATCH /v1/users/me`, `GET /v1/users/:id`, `POST/DELETE /v1/users/:id/follow` |
-| Posts | `POST /v1/posts` (scheduled + visibility), `GET /v1/posts/feed`, `GET/DELETE /v1/posts/:id`, `PUT/DELETE /:id/reaction`, `GET/POST /:id/comments` (nested) |
-| Chat | `GET/POST /v1/conversations`, `GET/POST /:id/messages`, `POST /:id/read`; Socket.IO `message:send`, `message:read`, `typing`, `message:new` |
-| Wallet | `GET /v1/wallet`, `GET /v1/wallet/transactions`, `POST /v1/rewards/daily/claim` |
-| Lucky Draw | `/v1/luckydraw/*` and `/v1/admin/luckydraw/*`; hidden (404) unless `LUCKY_DRAW_ENABLED` or the DB flag is on; verifiable seed commitment |
-| Admin | ban / suspend / reinstate / verify, `PUT /v1/admin/flags/:key`, `GET /v1/admin/stats` |
+| Auth | Email/password, phone OTP (5 min, 5 attempts, 3/hour), Google + Apple ID-token login, password reset by emailed code, TOTP 2FA with encrypted secret and 10 single-use backup codes (enforced on every login path), rotating refresh tokens with reuse detection, device session list/revoke |
+| Users | Profile, follow/unfollow, friend requests (accepting makes both follow each other), friend suggestions from the follow graph |
+| Posts | Text/image/video/poll posts, visibility, scheduling, hashtags, @mentions (notified), keyset feed, 5 reactions, nested comments, poll voting, AI/rule moderation (422 on violation) |
+| Media | Presigned direct-to-R2 uploads (type + size allow-list, size verified on completion, ownership enforced) |
+| Stories | 24h lifetime, tray with seen state, views, viewer list (author only), reactions, expiry job |
+| Videos | Reels feed + trending, long videos with categories, subscriptions + feed, playlists, view counts, recommendations |
+| Communities | Public/private groups, pages (business/community/creator), join approval, owner/admin/moderator roles, bans, page staff-only posting, private content never leaks into global feeds |
+| Chat | Direct + group chat, exactly-once sends, read cursors, group admin controls (rename/add/remove/roles), Socket.IO live delivery, offline push |
+| Calls | Agora RTC tokens, ring/join/decline/end, group calls, call history, missed-call job, `call:incoming` socket event + push |
+| Notifications | Inbox, live socket event, FCM push with per-type preferences, dead-token cleanup |
+| Engagement | XP + levels, badges, referral codes (+bonus coins, also at signup), weekly/community challenges, leaderboards |
+| Wallet | Atomic coin ledger with idempotency keys, daily reward streaks |
+| Lucky Draw | Hidden (404) unless enabled; region gating; commit/reveal seed; admin create/open/draw/publish/analytics |
+| Admin | Ban/suspend/reinstate/verify, reports queue (remove/dismiss), feature flags, analytics, audit log |
+| Search / AI | Smart search (@user, #tag, text; wildcard-safe), trending hashtags, translation via Claude when `AI_PROVIDER=anthropic` |
+| Infra | Redis-backed rate limits, Socket.IO Redis adapter, BullMQ scheduled jobs (in-process timers when Redis is absent) |
 
-## Not yet built
+## Needs your credentials before it works for real
 
-Phone OTP, Google/Apple login, 2FA, password reset, media uploads to R2, stories, reels/videos, groups and pages, FCM push, Agora call tokens, AI moderation/translation/search, referrals, badges/leaderboards, Redis (rate limits are in-memory; single node only), background jobs.
+| Feature | Set |
+| --- | --- |
+| Media uploads | `R2_ACCOUNT_ID`, `R2_ACCESS_KEY`, `R2_SECRET`, `R2_BUCKET`, `CDN_BASE_URL` |
+| Push | `FCM_SERVICE_ACCOUNT` (JSON) |
+| Calls | `AGORA_APP_ID`, `AGORA_CERT` |
+| Social login | `GOOGLE_CLIENT_ID`, `APPLE_CLIENT_ID` |
+| SMS / email | replace the console drivers in `src/integrations/sms.js` and `mailer.js` with your provider |
+| AI translation / moderation | `AI_PROVIDER=anthropic`, `ANTHROPIC_API_KEY` |
+
+## Known gaps
+
+- Tested on SQLite only; run `npm run migrate` against a real MySQL 8 before relying on it.
+- No video transcoding (ffmpeg/HLS renditions), thumbnails or image/video moderation: media is served as uploaded. "Video effects" are stored as metadata for the client to apply.
+- Moderation checks text only (rule list, plus the model when configured).
+- End-to-end encrypted chat and screen sharing are client-side concerns and not part of this API.

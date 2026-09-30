@@ -1,12 +1,24 @@
-// Decouples HTTP routes from the Socket.IO instance (set once at boot; no-op in tests without sockets).
+// Decouples HTTP routes and services from the Socket.IO instance (set once at boot; no-ops without it, e.g. in unit tests).
 const { memberIds } = require('../modules/chat/service');
 let io = null;
-module.exports = {
+
+const bus = {
   setIo: (i) => { io = i; },
-  async publishMessage(message) {
-    if (!io) return;
-    io.to(`c:${message.conversation_id}`).emit('message:new', message);
-  },
+  onlineCount: () => io?.engine?.clientsCount ?? 0,
+  async isOnline(userId) { return io ? (await io.in(`u:${userId}`).fetchSockets()).length > 0 : false; },
   emitToUser(userId, event, payload) { io?.to(`u:${userId}`).emit(event, payload); },
-  memberIds,
+  /** Put every live socket of these users into the conversation room (new DMs/groups/members). */
+  joinConversation(userIds, conversationId) { userIds.forEach((u) => io?.in(`u:${u}`).socketsJoin(`c:${conversationId}`)); },
+  leaveConversation(userId, conversationId) { io?.in(`u:${userId}`).socketsLeave(`c:${conversationId}`); },
+  /** Emit to the room, then push to members who have no live socket. */
+  async publishMessage(message) {
+    io?.to(`c:${message.conversation_id}`).emit('message:new', message);
+    const { push } = require('../modules/notify/service'); // lazy: notify -> bus
+    const sender = await require('../db/knex')('users').where({ id: message.sender_id }).first('display_name');
+    for (const uid of await memberIds(message.conversation_id)) {
+      if (uid === message.sender_id || (await bus.isOnline(uid))) continue;
+      await push(uid, 'message', { title: sender?.display_name || 'New message', body: message.type === 'text' ? String(message.body).slice(0, 120) : `Sent a ${message.type}`, data: { conversation_id: message.conversation_id } });
+    }
+  },
 };
+module.exports = bus;

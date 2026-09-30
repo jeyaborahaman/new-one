@@ -38,4 +38,20 @@ router.get('/stats', requireRole('admin'), asyncHandler(async (_req, res) => {
   res.json({ users: await n('users'), posts: await n('posts', { status: 'published' }), messages: await n('messages') });
 }));
 
+// Analytics: signups per day (last 14d), content volume, open reports, live connections.
+router.get('/analytics', requireRole('admin'), asyncHandler(async (_req, res) => {
+  const since = new Date(Date.now() - 14 * 864e5);
+  const bucket = async (table, col = 'created_at', where = {}) => {
+    const days = {}; for (let i = 13; i >= 0; i--) days[new Date(Date.now() - i * 864e5).toISOString().slice(0, 10)] = 0;
+    (await db(table).where(where).where(col, '>=', since).select(col)).forEach((r) => { const d = new Date(r[col]).toISOString().slice(0, 10); if (d in days) days[d] += 1; });
+    return Object.entries(days).map(([day, count]) => ({ day, count }));
+  };
+  const n = async (t, w = {}) => Number((await db(t).where(w).count({ c: '*' }).first()).c);
+  res.json({
+    signups: await bucket('users'), posts: await bucket('posts'), messages: await bucket('messages'),
+    totals: { users: await n('users'), banned: await n('users', { status: 'banned' }), open_reports: await n('reports', { status: 'open' }), coins_in_circulation: Number((await db('wallets').sum({ s: 'balance' }).first()).s || 0) },
+    live_connections: require('../realtime/bus').onlineCount(),
+  });
+}));
+
 module.exports = router;
