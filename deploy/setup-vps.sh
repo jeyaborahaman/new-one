@@ -2,7 +2,8 @@
 # Jeyabo API: first-time setup on a fresh Ubuntu 22.04/24.04 VPS. Run as root:
 #   DOMAIN=api.example.com REPO=https://github.com/jeyaborahaman/new-one.git BRANCH=claude/jeyabo-social-network-fs3aq0 bash setup-vps.sh
 set -euo pipefail
-: "${DOMAIN:?set DOMAIN}"; : "${REPO:?set REPO}"; BRANCH="${BRANCH:-main}"
+: "${DOMAIN:?set DOMAIN}"
+REPO="${REPO:-https://github.com/jeyaborahaman/new-one.git}"; BRANCH="${BRANCH:-claude/jeyabo-social-network-fs3aq0}"
 APP=/srv/jeyabo
 
 echo "== packages"
