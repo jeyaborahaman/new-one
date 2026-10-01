@@ -37,7 +37,7 @@ router.post('/', validate({ body: z.object({
   await grantXp(req.user.id, b.is_short ? 15 : 20, 'video');
   const subs = await db('subscriptions').where({ channel_id: req.user.id }).limit(500).select('subscriber_id');
   const me = await db('users').where({ id: req.user.id }).first('display_name');
-  await Promise.all(subs.map((s) => notify(s.subscriber_id, 'live', { title: me.display_name, body: `New ${b.is_short ? 'reel' : 'video'}: ${b.title}`, data: { post_id: id } })));
+  await Promise.all(subs.map((s) => notify(s.subscriber_id, 'live', { title: me.display_name, body: `New ${b.is_short ? 'reel' : 'video'}: ${b.title}`, t: { body: [b.is_short ? 'reel_new' : 'video_new', { title: b.title }] }, data: { post_id: id } })));
   res.status(201).json((await hydrate([await db('posts').where({ id }).first()], req.user.id))[0]);
 }));
 

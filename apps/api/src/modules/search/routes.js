@@ -8,6 +8,7 @@ const { err } = require('../../utils/errors');
 const { pageQuery } = require('../../utils/pagination');
 const ai = require('../../integrations/ai');
 const { visibleTo, hydrate, newestFirst } = require('../posts/lib');
+const { notBlocked } = require('../users/blocks');
 router.use(authenticate);
 
 const like = (s) => `%${s.replace(/[\\%_]/g, '')}%`;
@@ -21,7 +22,7 @@ router.get('/search', validate({ query: z.object({ q: z.string().trim().min(1).m
   if (!term) throw err.badRequest('Empty query');
   if (!term.replace(/[\\%_]/g, '').trim()) return res.json({ users: [], posts: [], communities: [], hashtags: [] }); // only wildcards
   if (want('users') && !q.startsWith('#')) {
-    out.users = await db('users').where({ status: 'active' }).andWhere((w) => w.where('username', 'like', like(term)).orWhere('display_name', 'like', like(term)))
+    out.users = await db('users').where({ status: 'active' }).where(notBlocked('id', req.user.id)).andWhere((w) => w.where('username', 'like', like(term)).orWhere('display_name', 'like', like(term)))
       .orderByRaw('case when username = ? then 0 when username like ? then 1 else 2 end, followers_count desc', [term.toLowerCase(), `${term.toLowerCase()}%`]).limit(15).select('id', 'username', 'display_name', 'is_verified', 'followers_count');
   }
   if (want('hashtags') || q.startsWith('#')) out.hashtags = await db('hashtags').where('tag', 'like', like(term.toLowerCase())).orderBy('uses', 'desc').limit(15);
@@ -52,11 +53,11 @@ router.get('/recommendations/friends', asyncHandler(async (req, res) => {
   const graph = await db('follows as f').whereIn('f.follower_id', followed).whereNot('f.followee_id', me).whereNotIn('f.followee_id', followed)
     .groupBy('f.followee_id').orderByRaw('count(*) desc').limit(20).select('f.followee_id as id', db.raw('count(*) as mutual'));
   const ids = graph.map((g) => g.id);
-  let users = ids.length ? await db('users').whereIn('id', ids).where({ status: 'active' }).select('id', 'username', 'display_name', 'is_verified') : [];
+  let users = ids.length ? await db('users').whereIn('id', ids).where({ status: 'active' }).where(notBlocked('id', me)).select('id', 'username', 'display_name', 'is_verified') : [];
   const mutual = Object.fromEntries(graph.map((g) => [g.id, Number(g.mutual)]));
   users = users.map((u) => ({ ...u, mutual_follows: mutual[u.id] })).sort((a, b) => b.mutual_follows - a.mutual_follows);
   if (users.length < 10) {
-    const fill = await db('users').where({ status: 'active' }).whereNot('id', me).whereNotIn('id', followed).whereNotIn('id', ids.length ? ids : [0]).orderBy('followers_count', 'desc').limit(10 - users.length).select('id', 'username', 'display_name', 'is_verified');
+    const fill = await db('users').where({ status: 'active' }).where(notBlocked('id', me)).whereNot('id', me).whereNotIn('id', followed).whereNotIn('id', ids.length ? ids : [0]).orderBy('followers_count', 'desc').limit(10 - users.length).select('id', 'username', 'display_name', 'is_verified');
     users = users.concat(fill.map((u) => ({ ...u, mutual_follows: 0 })));
   }
   res.json({ data: users });

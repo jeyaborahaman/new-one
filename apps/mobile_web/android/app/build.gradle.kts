@@ -1,3 +1,6 @@
+import java.io.FileInputStream
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
@@ -5,9 +8,16 @@ plugins {
     id("com.google.gms.google-services")
 }
 
+// Release signing: android/key.properties (never committed; see key.properties.example) points at the upload keystore.
+val keystorePropertiesFile = rootProject.file("key.properties")
+val keystoreProperties = Properties().apply {
+    if (keystorePropertiesFile.exists()) load(FileInputStream(keystorePropertiesFile))
+}
+val hasReleaseKey = keystorePropertiesFile.exists()
+
 android {
     namespace = "com.jeyabo.jeyabo"
-    compileSdk = flutter.compileSdkVersion
+    compileSdk = 37 // plugins (permission_handler_android) require it; flutter.compileSdkVersion is 36
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
@@ -30,11 +40,26 @@ android {
         versionName = flutter.versionName
     }
 
+    signingConfigs {
+        if (hasReleaseKey) {
+            create("release") {
+                keyAlias = keystoreProperties.getProperty("keyAlias")
+                keyPassword = keystoreProperties.getProperty("keyPassword")
+                storeFile = file(keystoreProperties.getProperty("storeFile"))
+                storePassword = keystoreProperties.getProperty("storePassword")
+            }
+        }
+    }
+
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
+            if (hasReleaseKey) {
+                signingConfig = signingConfigs.getByName("release")
+            } else {
+                // Lets `flutter run --release` work locally; Google Play rejects debug-signed bundles.
+                logger.warn("WARNING: android/key.properties not found - release build is signed with the DEBUG key and cannot be uploaded to Google Play.")
+                signingConfig = signingConfigs.getByName("debug")
+            }
         }
     }
 }

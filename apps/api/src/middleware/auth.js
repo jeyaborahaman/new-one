@@ -6,11 +6,15 @@ const { err } = require('../utils/errors');
 const ROLE_RANK = { user: 0, moderator: 1, admin: 2, superadmin: 3 };
 
 function verifyAccess(token) {
+  let claims;
   try {
-    return jwt.verify(token, env.JWT_SECRET, { algorithms: ['HS256'] });
+    claims = jwt.verify(token, env.JWT_SECRET, { algorithms: ['HS256'] });
   } catch {
     throw err.unauthorized('Invalid or expired token');
   }
+  // Only access tokens authenticate requests: a 2FA challenge token (same secret) must never grant access.
+  if (claims.typ !== 'access') throw err.unauthorized('Invalid or expired token');
+  return claims;
 }
 
 async function authenticate(req, _res, next) {

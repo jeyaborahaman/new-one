@@ -7,7 +7,7 @@ cp .env.example .env      # set JWT_SECRET (32+ chars) and DB_* values
 npm ci
 npm run migrate           # creates the schema in MySQL
 npm run dev               # http://localhost:4000, GET /health
-npm test                  # 11 integration tests, in-memory SQLite
+npm test                  # integration tests, in-memory SQLite
 ```
 
 ## Implemented
@@ -16,6 +16,7 @@ npm test                  # 11 integration tests, in-memory SQLite
 | --- | --- |
 | Auth | Email/password, phone OTP (5 min, 5 attempts, 3/hour), Google + Apple ID-token login, password reset by emailed code, TOTP 2FA with encrypted secret and 10 single-use backup codes (enforced on every login path), rotating refresh tokens with reuse detection, device session list/revoke |
 | Users | Profile, follow/unfollow, friend requests (accepting makes both follow each other), friend suggestions from the follow graph |
+| Safety | Block/unblock (`POST/DELETE /v1/users/:id/block`, `GET /v1/users/me/blocks`): hides profiles, posts, comments and search results both ways, removes follows and friend requests, closes DMs and group adds. Account deletion (`DELETE /v1/users/me` with `{confirm: "DELETE", password}`): anonymises the account, revokes sessions, takes content down, deletes uploaded files |
 | Posts | Text/image/video/poll posts, visibility, scheduling, hashtags, @mentions (notified), keyset feed, 5 reactions, nested comments, poll voting, AI/rule moderation (422 on violation) |
 | Media | Presigned direct-to-R2 uploads (type + size allow-list, size verified on completion, ownership enforced) |
 | Stories | 24h lifetime, tray with seen state, views, viewer list (author only), reactions, expiry job |
@@ -39,7 +40,8 @@ npm test                  # 11 integration tests, in-memory SQLite
 | Push | `FCM_SERVICE_ACCOUNT` (JSON) |
 | Calls | `AGORA_APP_ID`, `AGORA_CERT` |
 | Social login | `GOOGLE_CLIENT_ID`, `APPLE_CLIENT_ID` |
-| SMS / email | replace the console drivers in `src/integrations/sms.js` and `mailer.js` with your provider |
+| SMS / email | replace the console drivers in `src/integrations/sms.js` and `mailer.js` with your provider (`SMS_DRIVER`, `MAIL_DRIVER`). In production the console drivers log only a masked recipient, never the code |
+| Stored-secret encryption | `ENCRYPTION_KEY` (32+ chars, separate from `JWT_SECRET`); data encrypted before it was set stays readable |
 | AI translation / moderation | `AI_PROVIDER=anthropic`, `ANTHROPIC_API_KEY` |
 
 ## Local development without R2

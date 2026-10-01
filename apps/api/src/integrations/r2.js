@@ -17,7 +17,8 @@ const path = require('path');
 const crypto = require('crypto');
 const UPLOAD_DIR = path.join(__dirname, '../../.uploads');
 const KEY_RE = /^u\/\d+\/\d{4}\/[0-9a-f-]{36}\.[a-z0-9]+$/;
-const sign = (key, exp) => crypto.createHmac('sha256', env.JWT_SECRET).update(`${key}:${exp}`).digest('hex');
+const uploadKey = require('../utils/crypto').deriveKey('local-upload');
+const sign = (key, exp) => crypto.createHmac('sha256', uploadKey).update(`${key}:${exp}`).digest('hex');
 const localPath = (key) => { if (!KEY_RE.test(key)) throw new HttpError(400, 'BAD_KEY', 'Invalid key'); return path.join(UPLOAD_DIR, key); };
 
 module.exports = {

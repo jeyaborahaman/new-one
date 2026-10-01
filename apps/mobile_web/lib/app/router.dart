@@ -15,6 +15,9 @@ import '../features/reels/reels_screen.dart';
 import '../features/search/search_screen.dart';
 import '../features/wallet/luckydraw_screen.dart';
 import '../features/wallet/wallet_screens.dart';
+import '../core/l10n.dart';
+import '../features/calls/call_screens.dart';
+import '../features/communities/community_screens.dart';
 
 const _publicPaths = {'/login', '/register', '/phone', '/forgot'};
 
@@ -53,7 +56,13 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(path: '/story/new', builder: (_, _) => const StoryComposerScreen()),
       GoRoute(path: '/story/view', builder: (_, s) { final (groups, start) = s.extra as (List<StoryGroup>, int); return StoryViewerScreen(groups: groups, start: start); }),
-      GoRoute(path: '/chat/:id', builder: (_, s) => ChatThreadScreen(id: int.parse(s.pathParameters['id']!), title: s.uri.queryParameters['title'] ?? 'Chat')),
+      GoRoute(path: '/chat/:id', builder: (c, s) => ChatThreadScreen(id: int.parse(s.pathParameters['id']!), title: s.uri.queryParameters['title'] ?? c.l10n.chat, direct: s.uri.queryParameters['direct'] == '1')),
+      GoRoute(path: '/call', pageBuilder: (_, _) => const MaterialPage(fullscreenDialog: true, child: CallScreen())),
+      GoRoute(path: '/call/incoming/:id', builder: (_, s) => IncomingCallLoader(callId: s.pathParameters['id']!)),
+      GoRoute(path: '/calls', builder: (_, _) => const CallLogScreen()),
+      GoRoute(path: '/groups', builder: (_, _) => const CommunityListScreen(kind: 'group')),
+      GoRoute(path: '/pages', builder: (_, _) => const CommunityListScreen(kind: 'page')),
+      GoRoute(path: '/community/:id', builder: (_, s) => CommunityDetailScreen(id: int.parse(s.pathParameters['id']!))),
       GoRoute(path: '/user/:id', builder: (_, s) => UserProfileScreen(id: int.parse(s.pathParameters['id']!))),
       GoRoute(path: '/search', builder: (_, s) => SearchScreen(pickUser: s.uri.queryParameters['pick'] == '1')),
       GoRoute(path: '/notifications', builder: (_, _) => const NotificationsScreen()),
@@ -71,9 +80,10 @@ class _Shell extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final t = context.tk;
-    const dests = [
-      (Icons.home_outlined, Icons.home_rounded, 'Home'), (Icons.play_circle_outline, Icons.play_circle_rounded, 'Reels'), (Icons.add_circle_outline, Icons.add_circle_rounded, 'Create'),
-      (Icons.chat_bubble_outline, Icons.chat_bubble_rounded, 'Chats'), (Icons.person_outline, Icons.person_rounded, 'Profile'),
+    final l = context.l10n;
+    final dests = [
+      (Icons.home_outlined, Icons.home_rounded, l.navHome), (Icons.play_circle_outline, Icons.play_circle_rounded, l.navReels), (Icons.add_circle_outline, Icons.add_circle_rounded, l.navCreate),
+      (Icons.chat_bubble_outline, Icons.chat_bubble_rounded, l.navChats), (Icons.person_outline, Icons.person_rounded, l.navProfile),
     ];
     final wide = MediaQuery.of(context).size.width >= 900;
     final body = shell;

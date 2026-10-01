@@ -36,7 +36,7 @@ async function checkBadges(userId) {
     if (owned.has(b.code) || !b.test(s)) continue;
     const row = await db('badges').where({ code: b.code }).first('id');
     const ins = await db('user_badges').insert({ user_id: userId, badge_id: row.id }).onConflict(['user_id', 'badge_id']).ignore();
-    if (ins) { earned.push(b); await require('../notify/service').notify(userId, 'reward', { title: 'Badge earned', body: b.name, data: { badge: b.code } }); }
+    if (ins) { earned.push(b); await require('../notify/service').notify(userId, 'reward', { title: 'Badge earned', body: b.name, t: { title: ['badge_title'], body: ['badge', { code: b.code, name: b.name }] }, data: { badge: b.code } }); }
   }
   return earned.map((b) => b.code);
 }
@@ -52,7 +52,7 @@ async function applyReferral(userId, code) {
     await applyCoins(referrer.id, REFERRER_BONUS, 'referral', { trx, refType: 'user', refId: userId, idempotencyKey: `ref:${userId}:referrer` });
     await applyCoins(userId, REFEREE_BONUS, 'referral', { trx, refType: 'user', refId: referrer.id, idempotencyKey: `ref:${userId}:referee` });
   });
-  await require('../notify/service').notify(referrer.id, 'reward', { title: 'Referral bonus', body: `You earned ${REFERRER_BONUS} coins`, data: { coins: REFERRER_BONUS } });
+  await require('../notify/service').notify(referrer.id, 'reward', { title: 'Referral bonus', body: `You earned ${REFERRER_BONUS} coins`, t: { title: ['referral_title'], body: ['referral_body', { coins: REFERRER_BONUS }] }, data: { coins: REFERRER_BONUS } });
   await checkBadges(referrer.id);
   return { bonus_coins: REFEREE_BONUS };
 }

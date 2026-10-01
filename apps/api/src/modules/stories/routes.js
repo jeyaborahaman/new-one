@@ -20,7 +20,7 @@ router.post('/', validate({ body: z.object({ media_id: z.number().int().positive
   await grantXp(req.user.id, 5, 'story');
   const author = await db('users').where({ id: req.user.id }).first('display_name');
   const followers = await db('follows').where({ followee_id: req.user.id }).limit(500).select('follower_id');
-  await Promise.all(followers.map((f) => notify(f.follower_id, 'story', { title: author.display_name, body: 'Posted a new story', data: { story_id: id, author_id: req.user.id } })));
+  await Promise.all(followers.map((f) => notify(f.follower_id, 'story', { title: author.display_name, body: 'Posted a new story', t: { body: ['story_new'] }, data: { story_id: id, author_id: req.user.id } })));
   res.status(201).json(await db('stories').where({ id }).first());
 }));
 
@@ -64,7 +64,7 @@ router.get('/:id/viewers', validate({ params: idParam }), asyncHandler(async (re
 router.put('/:id/reaction', validate({ params: idParam, body: z.object({ kind: z.enum(['like', 'love', 'wow', 'laugh', 'sad']) }).strict() }), asyncHandler(async (req, res) => {
   const s = await liveStory(req.params.id);
   await db('reactions').insert({ target_type: 'story', target_id: s.id, user_id: req.user.id, kind: req.body.kind }).onConflict(['target_type', 'target_id', 'user_id']).merge({ kind: req.body.kind });
-  if (s.author_id !== req.user.id) await notify(s.author_id, 'reaction', { title: 'Story reaction', body: `Someone reacted ${req.body.kind}`, data: { story_id: s.id } });
+  if (s.author_id !== req.user.id) await notify(s.author_id, 'reaction', { title: 'Story reaction', body: `Someone reacted ${req.body.kind}`, t: { title: ['story_reaction_title'], body: ['story_reaction', { reaction: req.body.kind }] }, data: { story_id: s.id } });
   res.status(204).end();
 }));
 router.delete('/:id', validate({ params: idParam }), asyncHandler(async (req, res) => {

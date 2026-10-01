@@ -35,10 +35,25 @@ router.post('/', validate({ body: z.object({
   res.status(201).json(await db('communities').where({ id }).first());
 }));
 
+// Discovery/search. Private groups are listed too (so people can find and request to join them), but only as a
+// preview: no description; their posts stay members-only. my_status/my_role say whether the viewer already belongs.
+const listFields = (viewerId) => [
+  'c.id', 'c.kind', 'c.page_type', 'c.privacy', 'c.name', 'c.members_count', 'c.owner_id', 'c.created_at',
+  db.raw("case when c.privacy = 'public' then c.description else null end as description"),
+  'm.role as my_role', 'm.status as my_status',
+];
+const withMembership = (q, viewerId) => q.leftJoin('community_members as m', function () { this.on('m.community_id', 'c.id').andOn('m.user_id', db.raw('?', [viewerId])); });
 router.get('/', validate({ query: z.object({ q: z.string().max(100).optional(), kind: z.enum(['group', 'page']).optional() }) }), asyncHandler(async (req, res) => {
-  const q = db('communities').where({ privacy: 'public' }).orderBy('members_count', 'desc').limit(30);
-  if (req.query.q) q.where('name', 'like', `%${req.query.q.replace(/[%_]/g, '')}%`);
-  if (req.query.kind) q.where({ kind: req.query.kind });
+  const q = withMembership(db('communities as c'), req.user.id).orderBy('c.members_count', 'desc').limit(30).select(listFields(req.user.id));
+  if (req.query.q) q.where('c.name', 'like', `%${req.query.q.replace(/[\\%_]/g, '')}%`);
+  if (req.query.kind) q.where('c.kind', req.query.kind);
+  res.json({ data: await q });
+}));
+// Groups the viewer belongs to (or asked to join) and pages they follow.
+router.get('/mine', validate({ query: z.object({ kind: z.enum(['group', 'page']).optional() }) }), asyncHandler(async (req, res) => {
+  const q = db('communities as c').join('community_members as m', 'm.community_id', 'c.id').where('m.user_id', req.user.id).whereIn('m.status', ['active', 'pending'])
+    .orderBy('c.name').limit(200).select('c.*', 'm.role as my_role', 'm.status as my_status');
+  if (req.query.kind) q.where('c.kind', req.query.kind);
   res.json({ data: await q });
 }));
 
@@ -59,7 +74,7 @@ router.post('/:id/join', validate({ params: idParam }), asyncHandler(async (req,
   if (status === 'pending') {
     const me = await db('users').where({ id: req.user.id }).first('display_name');
     const staff = await db('community_members').where({ community_id: c.id, status: 'active' }).whereIn('role', STAFF).select('user_id');
-    await Promise.all(staff.map((s) => notify(s.user_id, 'friend_request', { title: c.name, body: `${me.display_name} wants to join`, data: { community_id: c.id, user_id: req.user.id } })));
+    await Promise.all(staff.map((s) => notify(s.user_id, 'friend_request', { title: c.name, body: `${me.display_name} wants to join`, t: { body: ['join_request', { name: me.display_name }] }, data: { community_id: c.id, user_id: req.user.id } })));
   }
   res.status(201).json({ status });
 }));
@@ -97,7 +112,7 @@ router.patch('/:id/members/:uid', validate({ params: idParam.extend({ uid: z.coe
   } else if (action === 'approve') {
     if (target.status !== 'pending') throw err.conflict('Not pending');
     await db('community_members').where({ community_id: c.id, user_id: target.user_id }).update({ status: 'active' });
-    await notify(target.user_id, 'reward', { title: c.name, body: 'Your join request was approved', data: { community_id: c.id } });
+    await notify(target.user_id, 'reward', { title: c.name, body: 'Your join request was approved', t: { body: ['join_approved'] }, data: { community_id: c.id } });
   } else if (action === 'reject') {
     await db('community_members').where({ community_id: c.id, user_id: target.user_id, status: 'pending' }).del();
   } else if (action === 'ban') {

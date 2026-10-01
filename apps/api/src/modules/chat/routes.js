@@ -8,6 +8,7 @@ const asyncHandler = require('../../utils/asyncHandler');
 const { pageQuery, page } = require('../../utils/pagination');
 const svc = require('./service');
 const realtime = require('../../realtime/bus');
+const { blockedAmong } = require('../users/blocks');
 
 const idParam = z.object({ id: z.coerce.number().int().positive() });
 const messageBody = z.object({ client_id: z.string().uuid(), type: z.enum(['text', 'voice', 'image', 'video', 'file', 'sticker']).default('text'), body: z.string().max(4000).optional(), media_id: z.number().int().positive().optional() })
@@ -76,6 +77,7 @@ router.patch('/:id', validate({ params: idParam, body: z.object({ title: z.strin
 router.post('/:id/members', validate({ params: idParam, body: z.object({ user_ids: z.array(z.number().int().positive()).min(1).max(200) }).strict() }), asyncHandler(async (req, res) => {
   await groupAdmin(req);
   const users = await db('users').whereIn('id', req.body.user_ids).where({ status: 'active' }).select('id');
+  if ((await blockedAmong(req.user.id, users.map((u) => u.id))).length) throw err.forbidden('You cannot add a user you blocked or who blocked you');
   await db('conversation_members').insert(users.map((u) => ({ conversation_id: req.params.id, user_id: u.id }))).onConflict(['conversation_id', 'user_id']).ignore();
   realtime.joinConversation(users.map((u) => u.id), req.params.id);
   res.status(204).end();

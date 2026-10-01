@@ -17,7 +17,7 @@ const schema = z.object({
   CORS_ORIGINS: z.string().default(''),
   LUCKY_DRAW_ENABLED: z.string().default('false').transform((v) => v === 'true'),
   REDIS_URL: z.string().optional(),
-  ENCRYPTION_KEY: z.string().optional(), // 32+ chars; falls back to JWT_SECRET
+  ENCRYPTION_KEY: z.preprocess((v) => (v === '' ? undefined : v), z.string().min(32, 'ENCRYPTION_KEY must be at least 32 characters').optional()), // unset/empty: falls back to JWT_SECRET
   APP_NAME: z.string().default('Jeyabo'),
   R2_DRIVER: z.enum(['r2', 'fake', 'local']).default('r2'), // 'local' stores files on this server's disk: development only
   API_PUBLIC_URL: z.string().default('http://localhost:4000'), // used to build URLs for the local driver
@@ -28,6 +28,7 @@ const schema = z.object({
   AGORA_APP_ID: z.string().optional(), AGORA_CERT: z.string().optional(),
   GOOGLE_CLIENT_ID: z.string().optional(), APPLE_CLIENT_ID: z.string().optional(),
   SMS_DRIVER: z.enum(['console', 'memory']).default('console'),
+  MAIL_DRIVER: z.enum(['console', 'memory']).default('console'),
   AI_PROVIDER: z.enum(['none', 'anthropic']).default('none'),
   ANTHROPIC_API_KEY: z.string().optional(),
   AI_MODEL: z.string().default('claude-haiku-4-5-20251001'),
@@ -42,5 +43,10 @@ if (!parsed.success) {
 if (parsed.data.NODE_ENV === 'production' && parsed.data.R2_DRIVER !== 'r2') {
   console.error('R2_DRIVER must be "r2" in production');
   process.exit(1);
+}
+if (parsed.data.NODE_ENV === 'production') {
+  if (!parsed.data.ENCRYPTION_KEY) console.warn('ENCRYPTION_KEY is not set: 2FA secrets are encrypted with a key derived from JWT_SECRET. Set a separate 32+ char key.');
+  if (parsed.data.SMS_DRIVER === 'console') console.warn('SMS_DRIVER=console: SMS codes are NOT delivered in production. Configure an SMS provider.');
+  if (parsed.data.MAIL_DRIVER === 'console') console.warn('MAIL_DRIVER=console: emails are NOT delivered in production. Configure an email provider.');
 }
 module.exports = parsed.data;

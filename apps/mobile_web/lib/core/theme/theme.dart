@@ -2,7 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'tokens.dart';
 
-ThemeData buildTheme(Brightness b) {
+/// Bundled script fonts used only for glyphs the theme fonts lack (Arabic script); Latin text is unchanged.
+/// Urdu prefers Nastaliq, its customary style; Naskh covers everything else in Arabic script.
+List<String> scriptFallback(String language) => language == 'ur' ? const ['NotoNastaliqUrdu', 'NotoNaskhArabic'] : const ['NotoNaskhArabic', 'NotoNastaliqUrdu'];
+
+ThemeData buildTheme(Brightness b, {String language = 'en'}) {
   final t = b == Brightness.dark ? JeyaboTokens.dark : JeyaboTokens.light;
   final scheme = ColorScheme(
     brightness: b, primary: t.brand, onPrimary: t.onBrand, primaryContainer: t.brandSoft, onPrimaryContainer: t.ink,
@@ -12,6 +16,7 @@ ThemeData buildTheme(Brightness b) {
   );
   final base = ThemeData(useMaterial3: true, colorScheme: scheme, brightness: b);
   final body = GoogleFonts.figtreeTextTheme(base.textTheme).apply(bodyColor: t.ink, displayColor: t.ink);
+  final fallback = scriptFallback(language);
   final display = GoogleFonts.bricolageGrotesque;
   return base.copyWith(
     extensions: [t],
@@ -19,7 +24,7 @@ ThemeData buildTheme(Brightness b) {
     textTheme: body.copyWith(
       headlineMedium: display(fontSize: 32, height: 38 / 32, fontWeight: FontWeight.w700, color: t.ink),
       titleLarge: display(fontSize: 20, height: 28 / 20, fontWeight: FontWeight.w600, color: t.ink),
-    ),
+    ).apply(fontFamilyFallback: fallback),
     appBarTheme: AppBarTheme(backgroundColor: t.bg, foregroundColor: t.ink, elevation: 0, scrolledUnderElevation: 0, centerTitle: false),
     cardTheme: CardThemeData(color: t.surface, elevation: 0, margin: EdgeInsets.zero, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(Rd.lg), side: BorderSide(color: t.border))),
     inputDecorationTheme: InputDecorationTheme(

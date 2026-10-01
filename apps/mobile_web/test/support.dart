@@ -33,7 +33,7 @@ class FakeAdapter implements HttpClientAdapter {
   void close({bool force = false}) {}
 }
 
-ApiClient fakeApi(Handler h, {TokenStore? store, void Function()? onSignedOut}) {
+ApiClient fakeApi(Handler h, {TokenStore? store, void Function()? onSignedOut, String Function()? language}) {
   final dio = Dio(BaseOptions(baseUrl: 'http://test/v1'))..httpClientAdapter = FakeAdapter(h);
-  return ApiClient(store ?? TokenStore(MemStorage()), dio: dio, onSignedOut: onSignedOut);
+  return ApiClient(store ?? TokenStore(MemStorage()), dio: dio, onSignedOut: onSignedOut, language: language);
 }

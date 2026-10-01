@@ -19,11 +19,10 @@ const HANDLERS = {
   },
   /** Ringing calls nobody answered within the ring window. */
   async expireCalls() {
-    const stale = await db('call_sessions').where({ status: 'ringing' }).where('created_at', '<=', new Date(Date.now() - 60_000));
-    for (const c of stale) {
-      await db('call_sessions').where({ id: c.id }).update({ status: 'missed', ended_at: new Date() });
-      bus.emitToUser(c.initiator_id, 'call:state', { call_id: c.id, status: 'missed' });
-    }
+    // Backstop for callers whose app vanished mid-ring: ring window plus a grace period, then missed for everyone.
+    const { RING_TIMEOUT_MS, finishCall } = require('../modules/calls/service');
+    const stale = await db('call_sessions').where({ status: 'ringing' }).where('created_at', '<=', new Date(Date.now() - RING_TIMEOUT_MS - 15_000));
+    for (const c of stale) await finishCall(c, 'missed');
     return stale.length;
   },
   /** Lucky Draw campaigns whose end time passed stop accepting entries. */

@@ -44,6 +44,10 @@ if [ $FIRST_RUN = 1 ]; then
   echo "API_PUBLIC_URL=https://$DOMAIN" >> .env
   chown deploy:deploy .env; chmod 600 .env
 fi
+# Separate key for encrypting stored secrets (older data encrypted under JWT_SECRET stays readable)
+if ! grep -q '^ENCRYPTION_KEY=.\{32,\}' .env; then
+  sed -i '/^ENCRYPTION_KEY=/d' .env; echo "ENCRYPTION_KEY=$(openssl rand -hex 32)" >> .env
+fi
 sudo -u deploy npm run migrate
 sudo -u deploy pm2 startOrReload ecosystem.config.js --update-env
 sudo -u deploy pm2 save

@@ -5,6 +5,7 @@ import '../../core/models.dart';
 import '../../core/providers.dart';
 import '../../core/theme/tokens.dart';
 import '../../core/widgets/common.dart';
+import '../../core/l10n.dart';
 
 /// TikTok-style vertical feed: one full-screen video per page, only the visible one plays.
 class ReelsScreen extends ConsumerStatefulWidget { const ReelsScreen({super.key}); @override ConsumerState<ReelsScreen> createState() => _State(); }
@@ -35,7 +36,7 @@ class _State extends ConsumerState<ReelsScreen> {
       body: Stack(children: [
         if (_loading) const Center(child: CircularProgressIndicator())
         else if (_error != null) ErrorRetry(message: _error!, onRetry: () { setState(() => _loading = true); _load(); })
-        else if (_reels.isEmpty) const EmptyState(icon: Icons.movie_creation_outlined, title: 'No reels yet', message: 'Short videos will show up here.')
+        else if (_reels.isEmpty) EmptyState(icon: Icons.movie_creation_outlined, title: context.l10n.noReels, message: context.l10n.noReelsMessage)
         else PageView.builder(
           controller: _page, scrollDirection: Axis.vertical, itemCount: _reels.length,
           onPageChanged: (i) { setState(() => _current = i); if (i >= _reels.length - 3 && _cursor != null && !_more && !_trending) { _more = true; _load(append: true); } },
@@ -44,7 +45,7 @@ class _State extends ConsumerState<ReelsScreen> {
         SafeArea(child: Padding(
           padding: const EdgeInsets.all(Sp.s3),
           child: Glass(radius: Rd.pill, padding: const EdgeInsets.all(4), child: Row(mainAxisSize: MainAxisSize.min, children: [
-            for (final e in [(false, 'For you'), (true, 'Trending')]) GestureDetector(
+            for (final e in [(false, context.l10n.forYou), (true, context.l10n.trending)]) GestureDetector(
               onTap: () { if (_trending != e.$1) { setState(() { _trending = e.$1; _loading = true; }); _load(); } },
               child: Container(padding: const EdgeInsets.symmetric(horizontal: Sp.s4, vertical: Sp.s2), decoration: BoxDecoration(color: _trending == e.$1 ? t.brand : Colors.transparent, borderRadius: BorderRadius.circular(Rd.pill)), child: Text(e.$2, style: TextStyle(fontWeight: FontWeight.w700, color: _trending == e.$1 ? t.onBrand : t.ink))),
             ),
@@ -82,19 +83,19 @@ class _PageState extends ConsumerState<_ReelPage> {
       onTap: () => setState(() => (_c?.value.isPlaying ?? false) ? _c?.pause() : _c?.play()),
       child: Stack(fit: StackFit.expand, children: [
         if (_c != null && _c!.value.isInitialized) FittedBox(fit: BoxFit.cover, child: SizedBox(width: _c!.value.size.width, height: _c!.value.size.height, child: VideoPlayer(_c!)))
-        else Center(child: _failed ? const Text('Video unavailable', style: TextStyle(color: Colors.white)) : const CircularProgressIndicator()),
+        else Center(child: _failed ? Text(context.l10n.videoUnavailable, style: const TextStyle(color: Colors.white)) : const CircularProgressIndicator()),
         Positioned(left: 0, right: 0, bottom: 0, child: Container(height: 220, decoration: BoxDecoration(gradient: LinearGradient(begin: Alignment.bottomCenter, end: Alignment.topCenter, colors: [t.scrim, Colors.transparent])))),
-        Positioned(left: Sp.s4, right: 80, bottom: Sp.s6, child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
-          Text('@${p.author.username}', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 16)),
+        PositionedDirectional(start: Sp.s4, end: 80, bottom: Sp.s6, child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
+          Text(isolate('@${p.author.username}'), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 16)),
           const SizedBox(height: 4),
-          Text(p.videoTitle ?? p.body, maxLines: 3, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Colors.white, fontSize: 15)),
+          Text(p.videoTitle ?? p.body, textDirection: contentDirection(p.videoTitle ?? p.body), maxLines: 3, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Colors.white, fontSize: 15)),
         ])),
-        Positioned(right: Sp.s3, bottom: Sp.s8, child: Column(children: [
-          _Action(icon: p.myReaction != null ? Icons.favorite : Icons.favorite_border, label: compact(p.reactions), onTap: () async {
-            try { await ref.read(apiProvider).put('/posts/${p.id}/reaction', body: {'kind': 'love'}); if (context.mounted) toast(context, 'Loved'); } catch (e) { if (context.mounted) toast(context, e.toString()); }
+        PositionedDirectional(end: Sp.s3, bottom: Sp.s8, child: Column(children: [
+          _Action(icon: p.myReaction != null ? Icons.favorite : Icons.favorite_border, label: context.compact(p.reactions), onTap: () async {
+            try { await ref.read(apiProvider).put('/posts/${p.id}/reaction', body: {'kind': 'love'}); if (context.mounted) toast(context, context.l10n.loved); } catch (e) { if (context.mounted) toast(context, e.toString()); }
           }),
           const SizedBox(height: Sp.s4),
-          _Action(icon: Icons.mode_comment_outlined, label: compact(p.comments), onTap: () {}),
+          _Action(icon: Icons.mode_comment_outlined, label: context.compact(p.comments), onTap: () {}),
         ])),
       ]),
     );

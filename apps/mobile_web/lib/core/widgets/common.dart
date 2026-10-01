@@ -1,6 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import '../theme/tokens.dart';
+import '../l10n.dart';
 
 class JAvatar extends StatelessWidget {
   const JAvatar(this.initials, {super.key, this.size = 40});
@@ -21,7 +22,7 @@ class StoryRing extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = context.tk;
     return Semantics(
-      label: '${label ?? ''} ${seen ? 'seen' : 'new'} story',
+      label: context.l10n.storyRingSemantic(seen ? 'seen' : 'new', label ?? ''),
       child: Container(
         padding: const EdgeInsets.all(3),
         decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: seen ? t.borderStrong : t.brand, width: 2.5)),
@@ -77,7 +78,7 @@ class ErrorRetry extends StatelessWidget {
   const ErrorRetry({super.key, required this.message, required this.onRetry});
   final String message; final VoidCallback onRetry;
   @override
-  Widget build(BuildContext context) => EmptyState(icon: Icons.cloud_off_rounded, title: 'Something went wrong', message: message, action: FilledButton(onPressed: onRetry, child: const Text('Try again')));
+  Widget build(BuildContext context) => EmptyState(icon: Icons.cloud_off_rounded, title: context.l10n.somethingWentWrong, message: message, action: FilledButton(onPressed: onRetry, child: Text(context.l10n.tryAgain)));
 }
 
 void toast(BuildContext context, String message) => ScaffoldMessenger.of(context)..hideCurrentSnackBar()..showSnackBar(SnackBar(content: Text(message)));

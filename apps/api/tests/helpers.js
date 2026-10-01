@@ -1,6 +1,7 @@
 process.env.NODE_ENV = 'test';
 process.env.DB_CLIENT = 'better-sqlite3';
 process.env.SMS_DRIVER = 'memory';
+process.env.MAIL_DRIVER = 'memory';
 process.env.R2_DRIVER ||= 'fake';
 process.env.AGORA_APP_ID = 'a'.repeat(32);
 process.env.AGORA_CERT = 'b'.repeat(32);

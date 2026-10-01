@@ -1,4 +1,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Release builds need network access (debug/profile manifests only add it for tooling). -->
+    <uses-permission android:name="android.permission.INTERNET"/>
     <application
         android:label="jeyabo"
         android:name="${applicationName}"

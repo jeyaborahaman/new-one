@@ -37,7 +37,7 @@ Future<int> uploadMedia(ApiClient api, PickedMedia m, {void Function(double)? on
     final Object body = kIsWeb ? await m.file.readAsBytes() : m.file.openRead();
     await dio.put(init['upload_url'] as String, data: body, options: Options(headers: {'Content-Type': m.mime, Headers.contentLengthHeader: m.size}), onSendProgress: (sent, total) { if (onProgress != null && total > 0) onProgress(sent / total); });
   } on DioException catch (e) {
-    throw ApiException(e.type == DioExceptionType.connectionError ? 'Upload failed. Check your connection.' : 'Upload failed (${e.response?.statusCode ?? 'network'}).');
+    throw ApiException(e.type == DioExceptionType.connectionError ? api.strings.uploadFailedNetwork : api.strings.uploadFailedCode('${e.response?.statusCode ?? 'network'}'));
   }
   await api.post('/media/$id/complete');
   return id;

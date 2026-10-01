@@ -5,28 +5,19 @@ DateTime parseTime(dynamic v) {
   return DateTime.now();
 }
 
-String timeAgo(DateTime t) {
-  final d = DateTime.now().difference(t);
-  if (d.inSeconds < 60) return 'now';
-  if (d.inMinutes < 60) return '${d.inMinutes}m';
-  if (d.inHours < 24) return '${d.inHours}h';
-  if (d.inDays < 7) return '${d.inDays}d';
-  return '${t.day}/${t.month}/${t.year}';
-}
-
-String compact(int n) => n >= 1000000 ? '${(n / 1000000).toStringAsFixed(1)}M' : n >= 1000 ? '${(n / 1000).toStringAsFixed(1)}K' : '$n';
-
 class User {
-  User({required this.id, required this.username, required this.displayName, this.bio, this.verified = false, this.level = 1, this.xp = 0, this.followers = 0, this.following = 0, this.twoFactor = false, this.referralCode, this.isFollowing = false});
+  User({required this.id, required this.username, required this.displayName, this.bio, this.verified = false, this.level = 1, this.xp = 0, this.followers = 0, this.following = 0, this.twoFactor = false, this.referralCode, this.isFollowing = false, this.locale, this.hasPassword = true});
   final int id, level, xp, followers, following;
   final String username, displayName;
-  final String? bio, referralCode;
+  final String? bio, referralCode, locale;
   final bool verified, twoFactor, isFollowing;
+  /// False for phone/Google/Apple-only accounts: deleting the account then needs no password.
+  final bool hasPassword;
 
   factory User.fromJson(Map<String, dynamic> j) => User(
         id: j['id'], username: j['username'], displayName: j['display_name'] ?? j['username'], bio: j['bio'],
         verified: j['is_verified'] == true, level: j['level'] ?? 1, xp: (j['xp'] ?? 0).toInt(), followers: j['followers_count'] ?? 0,
-        following: j['following_count'] ?? 0, twoFactor: j['two_factor_enabled'] == true, referralCode: j['referral_code'], isFollowing: j['following'] == true,
+        following: j['following_count'] ?? 0, twoFactor: j['two_factor_enabled'] == true, referralCode: j['referral_code'], isFollowing: j['following'] == true, locale: j['locale'], hasPassword: j['has_password'] != false,
       );
   String get initials => displayName.trim().isEmpty ? '?' : displayName.trim().split(RegExp(r'\s+')).take(2).map((w) => w[0].toUpperCase()).join();
 }
@@ -73,18 +64,18 @@ class Post {
 class Comment {
   Comment({required this.id, required this.authorId, required this.authorName, required this.body, required this.createdAt, required this.depth, this.parentId});
   final int id, authorId, depth; final int? parentId; final String body, authorName; final DateTime createdAt;
-  factory Comment.fromJson(Map<String, dynamic> j) => Comment(id: j['id'], authorId: j['author_id'], authorName: (j['author'] as Map?)?['display_name'] ?? 'Someone', body: j['body'], createdAt: parseTime(j['created_at']), depth: j['depth'] ?? 0, parentId: j['parent_id']);
+  factory Comment.fromJson(Map<String, dynamic> j) => Comment(id: j['id'], authorId: j['author_id'], authorName: (j['author'] as Map?)?['display_name'] ?? '', body: j['body'], createdAt: parseTime(j['created_at']), depth: j['depth'] ?? 0, parentId: j['parent_id']);
 }
 
 class Conversation {
-  Conversation({required this.id, required this.type, required this.title, this.peerId, this.lastBody, this.lastAt, this.unread = 0, this.lastReadId = 0});
-  final int id, unread, lastReadId; final String type, title; final int? peerId; final String? lastBody; final DateTime? lastAt;
+  Conversation({required this.id, required this.type, required this.title, this.peerId, this.lastBody, this.lastType, this.lastAt, this.unread = 0, this.lastReadId = 0});
+  final int id, unread, lastReadId; final String type, title; final int? peerId; final String? lastBody, lastType; final DateTime? lastAt;
   factory Conversation.fromJson(Map<String, dynamic> j) {
     final last = j['last_message'] as Map<String, dynamic>?;
     final t = last?['type'];
     return Conversation(
-      id: j['id'], type: j['type'], title: j['title'] ?? 'Chat', peerId: (j['peer'] as Map?)?['id'], unread: j['unread'] ?? 0, lastReadId: j['last_read_message_id'] ?? 0,
-      lastBody: last == null ? null : (t == 'text' ? last['body'] : 'Sent a $t'), lastAt: last == null ? null : parseTime(last['created_at']),
+      id: j['id'], type: j['type'], title: j['title'] ?? '', peerId: (j['peer'] as Map?)?['id'], unread: j['unread'] ?? 0, lastReadId: j['last_read_message_id'] ?? 0,
+      lastBody: t == 'text' ? last!['body'] : null, lastType: t, lastAt: last == null ? null : parseTime(last['created_at']),
     );
   }
 }
@@ -104,4 +95,25 @@ class StoryItem {
   StoryItem(this.id, this.kind, this.url, this.caption, this.seen);
   final int id; final String kind, url; final String? caption; final bool seen;
   factory StoryItem.fromJson(Map<String, dynamic> j) => StoryItem(j['id'], j['kind'], j['url'], j['caption'], j['seen'] == true);
+}
+
+/// A group or a page (one backend model: `kind`). For pages, members are followers.
+class Community {
+  Community({required this.id, required this.kind, required this.privacy, required this.name, this.pageType, this.description, this.membersCount = 0, this.myRole, this.myStatus});
+  final int id, membersCount;
+  final String kind, privacy, name;
+  final String? pageType, description, myRole, myStatus;
+
+  bool get isPage => kind == 'page';
+  bool get isPrivate => privacy == 'private';
+  bool get isMember => myStatus == 'active';
+  bool get isPending => myStatus == 'pending';
+  bool get isOwner => isMember && myRole == 'owner';
+  bool get isStaff => isMember && const ['owner', 'admin', 'moderator'].contains(myRole);
+  String get initials => name.trim().isEmpty ? '?' : name.trim().split(RegExp(r'\s+')).take(2).map((w) => w[0].toUpperCase()).join();
+
+  factory Community.fromJson(Map<String, dynamic> j) => Community(
+        id: j['id'], kind: j['kind'] ?? 'group', privacy: j['privacy'] ?? 'public', name: j['name'] ?? '', pageType: j['page_type'],
+        description: j['description'], membersCount: (j['members_count'] as num?)?.toInt() ?? 0, myRole: j['my_role'], myStatus: j['my_status'],
+      );
 }

@@ -9,6 +9,6 @@ const make = (name, windowMs, limit) =>
     windowMs, limit, standardHeaders: true, legacyHeaders: false,
     skip: () => env.NODE_ENV === 'test' && !process.env.RATE_LIMIT_IN_TEST,
     ...(redis ? { store: new RedisStore({ prefix: `rl:${name}:`, sendCommand: (...args) => redis.call(...args) }) } : {}),
-    handler: (_req, res) => res.status(429).json({ error: { code: 'RATE_LIMITED', message: 'Too many requests' } }),
+    handler: (req, res) => res.status(429).json({ error: { code: 'RATE_LIMITED', message: require('./error').tr(req, 'Too many requests') } }),
   });
 module.exports = { general: make('general', 60_000, 120), auth: make('auth', 60_000, 10) };

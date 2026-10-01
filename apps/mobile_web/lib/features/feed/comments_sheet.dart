@@ -5,6 +5,8 @@ import '../../core/providers.dart';
 import '../../core/theme/tokens.dart';
 import '../../core/widgets/common.dart';
 import 'feed_state.dart';
+import '../../core/l10n.dart';
+import '../profile/safety.dart';
 
 void showCommentsSheet(BuildContext context, Post post) => showModalBottomSheet(
       context: context, isScrollControlled: true, showDragHandle: true, useSafeArea: true,
@@ -48,15 +50,18 @@ class _State extends ConsumerState<CommentsSheet> {
   }
 
   Widget _tile(Comment c, {double indent = 0}) {
-    final t = context.tk;
+    final t = context.tk; final l = context.l10n;
     return Padding(
-      padding: EdgeInsets.fromLTRB(Sp.s4 + indent, Sp.s2, Sp.s4, Sp.s2),
+      padding: EdgeInsetsDirectional.fromSTEB(Sp.s4 + indent, Sp.s2, Sp.s4, Sp.s2),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Row(children: [Text(c.authorName, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13)), const SizedBox(width: 8), Text(timeAgo(c.createdAt), style: TextStyle(fontSize: 12, color: t.inkMuted))]),
-        Text(c.body),
         Row(children: [
-          TextButton(onPressed: () => setState(() => _replyTo = c), style: TextButton.styleFrom(visualDensity: VisualDensity.compact, foregroundColor: t.inkMuted), child: const Text('Reply')),
-          if (c.depth == 0 && !_replies.containsKey(c.id)) TextButton(onPressed: () => _loadReplies(c), style: TextButton.styleFrom(visualDensity: VisualDensity.compact), child: const Text('View replies')),
+          Text(c.authorName.isEmpty ? l.someone : c.authorName, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13)), const SizedBox(width: 8), Text(context.timeAgo(c.createdAt), style: TextStyle(fontSize: 12, color: t.inkMuted)),
+          if (c.authorId != ref.read(authProvider).user?.id) ...[const Spacer(), ReportMenuButton(onReport: () => reportComment(context, commentId: c.id))], // others' comments only
+        ]),
+        SizedBox(width: double.infinity, child: Text(c.body, textDirection: contentDirection(c.body))),
+        Row(children: [
+          TextButton(onPressed: () => setState(() => _replyTo = c), style: TextButton.styleFrom(visualDensity: VisualDensity.compact, foregroundColor: t.inkMuted), child: Text(l.reply)),
+          if (c.depth == 0 && !_replies.containsKey(c.id)) TextButton(onPressed: () => _loadReplies(c), style: TextButton.styleFrom(visualDensity: VisualDensity.compact), child: Text(l.viewReplies)),
         ]),
         for (final r in _replies[c.id] ?? <Comment>[]) _tile(r, indent: Sp.s6),
       ]),
@@ -65,20 +70,20 @@ class _State extends ConsumerState<CommentsSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final t = context.tk;
+    final t = context.tk; final l = context.l10n;
     return ConstrainedBox(
       constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.75),
       child: Column(mainAxisSize: MainAxisSize.min, children: [
-        Text('Comments', style: Theme.of(context).textTheme.titleLarge),
-        Flexible(child: _loading ? const Padding(padding: EdgeInsets.all(Sp.s6), child: CircularProgressIndicator()) : _error != null ? ErrorRetry(message: _error!, onRetry: () { setState(() { _loading = true; _error = null; }); _load(); }) : _items.isEmpty ? const Padding(padding: EdgeInsets.all(Sp.s6), child: Text('No comments yet. Start the conversation.')) : ListView(shrinkWrap: true, children: [for (final c in _items) _tile(c)])),
+        Text(l.commentsTitle, style: Theme.of(context).textTheme.titleLarge),
+        Flexible(child: _loading ? const Padding(padding: EdgeInsets.all(Sp.s6), child: CircularProgressIndicator()) : _error != null ? ErrorRetry(message: _error!, onRetry: () { setState(() { _loading = true; _error = null; }); _load(); }) : _items.isEmpty ? Padding(padding: const EdgeInsets.all(Sp.s6), child: Text(l.noComments)) : ListView(shrinkWrap: true, children: [for (final c in _items) _tile(c)])),
         const Divider(),
-        if (_replyTo != null) Padding(padding: const EdgeInsets.symmetric(horizontal: Sp.s4), child: Row(children: [Expanded(child: Text('Replying to ${_replyTo!.authorName}', style: TextStyle(fontSize: 12, color: t.inkMuted))), IconButton(tooltip: 'Cancel reply', icon: const Icon(Icons.close, size: 18), onPressed: () => setState(() => _replyTo = null))])),
+        if (_replyTo != null) Padding(padding: const EdgeInsets.symmetric(horizontal: Sp.s4), child: Row(children: [Expanded(child: Text(l.replyingTo(_replyTo!.authorName.isEmpty ? l.someone : _replyTo!.authorName), style: TextStyle(fontSize: 12, color: t.inkMuted))), IconButton(tooltip: l.cancelReply, icon: const Icon(Icons.close, size: 18), onPressed: () => setState(() => _replyTo = null))])),
         Padding(
           padding: const EdgeInsets.all(Sp.s3),
           child: Row(children: [
-            Expanded(child: TextField(controller: _ctl, decoration: const InputDecoration(hintText: 'Add a comment', isDense: true), onSubmitted: (_) => _send(), maxLength: 2000, buildCounter: (_, {required currentLength, required isFocused, maxLength}) => null)),
+            Expanded(child: TextField(controller: _ctl, decoration: InputDecoration(hintText: l.addComment, isDense: true), onSubmitted: (_) => _send(), maxLength: 2000, buildCounter: (_, {required currentLength, required isFocused, maxLength}) => null)),
             const SizedBox(width: Sp.s2),
-            IconButton.filled(tooltip: 'Send comment', onPressed: _sending ? null : _send, icon: const Icon(Icons.send_rounded)),
+            IconButton.filled(tooltip: l.sendComment, onPressed: _sending ? null : _send, icon: const Icon(Icons.send_rounded)),
           ]),
         ),
       ]),

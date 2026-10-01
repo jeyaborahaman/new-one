@@ -14,7 +14,8 @@ const addDays = (d) => new Date(Date.now() + d * 864e5);
 const hashPw = (pw) => argon2.hash(pw, { type: argon2.argon2id, memoryCost: 65536, timeCost: 3 });
 
 function signAccess(user, sid) {
-  return jwt.sign({ sub: String(user.id), role: user.role, sid }, env.JWT_SECRET, { algorithm: 'HS256', expiresIn: env.ACCESS_TTL });
+  // typ distinguishes access tokens from 2FA challenge tokens, which are signed with the same secret.
+  return jwt.sign({ sub: String(user.id), role: user.role, sid, typ: 'access' }, env.JWT_SECRET, { algorithm: 'HS256', expiresIn: env.ACCESS_TTL });
 }
 async function issueTokens(user, { familyId = crypto.randomUUID(), device } = {}) {
   const id = crypto.randomUUID();
@@ -22,13 +23,13 @@ async function issueTokens(user, { familyId = crypto.randomUUID(), device } = {}
   await db('sessions').insert({ id, user_id: user.id, family_id: familyId, refresh_hash: sha256(refresh), device_name: device, expires_at: addDays(env.REFRESH_TTL_DAYS) });
   return { accessToken: signAccess(user, id), refreshToken: refresh, expiresIn: env.ACCESS_TTL };
 }
-const publicUser = (u) => ({ id: u.id, username: u.username, display_name: u.display_name, bio: u.bio, is_verified: !!u.is_verified, level: u.level, xp: Number(u.xp), followers_count: u.followers_count, following_count: u.following_count, two_factor_enabled: !!u.two_factor_enabled, referral_code: u.referral_code, created_at: u.created_at });
+const publicUser = (u) => ({ id: u.id, username: u.username, display_name: u.display_name, bio: u.bio, is_verified: !!u.is_verified, level: u.level, xp: Number(u.xp), followers_count: u.followers_count, following_count: u.following_count, two_factor_enabled: !!u.two_factor_enabled, referral_code: u.referral_code, locale: u.locale || 'en', has_password: !!u.password_hash, created_at: u.created_at }); // has_password: whether deleting the account asks for it
 
 /** Every login path ends here so 2FA cannot be bypassed via OTP or OAuth. */
 async function finishLogin(user, device) {
   if (user.status !== 'active') throw err.forbidden(`Account ${user.status}`);
   if (user.two_factor_enabled) {
-    const challenge_token = jwt.sign({ sub: String(user.id), purpose: '2fa', device }, env.JWT_SECRET, { algorithm: 'HS256', expiresIn: '5m' });
+    const challenge_token = jwt.sign({ sub: String(user.id), purpose: '2fa', typ: '2fa', device }, env.JWT_SECRET, { algorithm: 'HS256', expiresIn: '5m' });
     return { requires_2fa: true, challenge_token };
   }
   return { user: publicUser(user), ...(await issueTokens(user, { device })) };

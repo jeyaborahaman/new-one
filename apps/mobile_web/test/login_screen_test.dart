@@ -6,10 +6,11 @@ import 'package:jeyabo/core/network/api_client.dart';
 import 'package:jeyabo/core/theme/theme.dart';
 import 'package:jeyabo/features/auth/auth_screens.dart';
 import 'support.dart';
+import 'package:jeyabo/core/l10n.dart';
 
 Widget host(ApiClient api, Widget child, {Brightness b = Brightness.light}) => ProviderScope(
       overrides: [apiProvider.overrideWithValue(api), tokenStoreProvider.overrideWithValue(api.tokens)],
-      child: MaterialApp(theme: buildTheme(b), home: child),
+      child: MaterialApp(theme: buildTheme(b), home: child, localizationsDelegates: AppLocalizations.localizationsDelegates, supportedLocales: AppLocalizations.supportedLocales),
     );
 
 void main() {

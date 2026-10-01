@@ -22,6 +22,20 @@ void main() {
     expect(store.refresh, 'r2');
   });
 
+  test('refreshTokens (used by the socket) renews the pair once for concurrent callers', () async {
+    final store = TokenStore(MemStorage())..access = 'old'..refresh = 'r1';
+    var refreshes = 0;
+    final api = fakeApi((o) {
+      if (o.path == '/auth/refresh') { refreshes++; return (status: 200, body: {'accessToken': 'new', 'refreshToken': 'r2'}); }
+      return o.headers['Authorization'] == 'Bearer new' ? (status: 200, body: {'ok': true}) : (status: 401, body: {'error': {'message': 'expired'}});
+    }, store: store);
+    expect(await Future.wait([api.refreshTokens(), api.refreshTokens()]), [true, true]);
+    expect(refreshes, 1); // rotating refresh tokens: a second concurrent refresh would be treated as reuse
+    expect(store.access, 'new'); expect(store.refresh, 'r2');
+    expect((await api.get('/a'))['ok'], true); // later calls use the renewed token without refreshing again
+    expect(refreshes, 1);
+  });
+
   test('a failed refresh signs the user out and clears tokens', () async {
     final store = TokenStore(MemStorage())..access = 'old'..refresh = 'bad';
     var signedOut = false;

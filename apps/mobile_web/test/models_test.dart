@@ -8,13 +8,6 @@ void main() {
     expect(parseTime(null).difference(DateTime.now()).inSeconds.abs() < 2, true);
   });
 
-  test('timeAgo and compact formatting', () {
-    expect(timeAgo(DateTime.now()), 'now');
-    expect(timeAgo(DateTime.now().subtract(const Duration(minutes: 5))), '5m');
-    expect(timeAgo(DateTime.now().subtract(const Duration(hours: 3))), '3h');
-    expect(compact(999), '999'); expect(compact(1200), '1.2K'); expect(compact(2500000), '2.5M');
-  });
-
   test('Post.fromJson parses media, poll and reaction', () {
     final p = Post.fromJson({
       'id': 7, 'type': 'poll', 'body': 'Best? #x', 'created_at': 1790727815000, 'reactions_count': 3, 'comments_count': 1, 'my_reaction': 'love',
@@ -28,6 +21,6 @@ void main() {
 
   test('Conversation preview for non-text messages', () {
     final c = Conversation.fromJson({'id': 1, 'type': 'direct', 'title': 'Zed', 'unread': 2, 'last_message': {'type': 'voice', 'body': null, 'created_at': 1790727815000}});
-    expect(c.lastBody, 'Sent a voice'); expect(c.unread, 2);
+    expect(c.lastType, 'voice'); expect(c.lastBody, isNull); expect(c.unread, 2);
   });
 }

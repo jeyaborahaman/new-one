@@ -1,9 +1,11 @@
 const db = require('../../db/knex');
 const r2 = require('../../integrations/r2');
+const { notBlocked } = require('../users/blocks');
 
-/** Query-builder fragment: posts the viewer may see (status, visibility, community privacy). */
+/** Query-builder fragment: posts the viewer may see (status, visibility, community privacy, blocks). */
 const visibleTo = (viewerId) => function () {
   this.where('posts.status', 'published')
+    .andWhere(notBlocked('posts.author_id', viewerId))
     .andWhere(function () {
       this.where('posts.visibility', 'public').orWhere('posts.author_id', viewerId)
         .orWhere(function () { this.where('posts.visibility', 'followers').whereIn('posts.author_id', db('follows').where('follower_id', viewerId).select('followee_id')); });

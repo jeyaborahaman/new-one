@@ -14,7 +14,10 @@ const setStatus = (status, action) => [validate({ params: idParam }), asyncHandl
   if (!u) throw err.notFound('User not found');
   if (u.role !== 'user') throw err.forbidden('Cannot moderate staff accounts');
   await db('users').where({ id: u.id }).update({ status });
-  if (status !== 'active') await db('sessions').where({ user_id: u.id }).whereNull('revoked_at').update({ revoked_at: new Date() });
+  if (status !== 'active') {
+    await db('sessions').where({ user_id: u.id }).whereNull('revoked_at').update({ revoked_at: new Date() });
+    require('../realtime/bus').disconnectUser(u.id);
+  }
   await db('audit_logs').insert({ actor_id: req.user.id, action, target: `user:${u.id}` });
   res.json({ id: u.id, status });
 })];

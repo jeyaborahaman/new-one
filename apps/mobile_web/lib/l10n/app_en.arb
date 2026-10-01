@@ -1,0 +1,747 @@
+{
+  "@@locale": "en",
+  "navHome": "Home",
+  "navReels": "Reels",
+  "navCreate": "Create",
+  "navChats": "Chats",
+  "navProfile": "Profile",
+  "somethingWentWrong": "Something went wrong",
+  "tryAgain": "Try again",
+  "storyRingSemantic": "{state, select, seen{{name} seen story} other{{name} new story}}",
+  "@storyRingSemantic": {
+    "placeholders": {
+      "state": {
+        "type": "String"
+      },
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "errorNetwork": "Cannot reach the server. Check your connection.",
+  "errorGeneric": "Something went wrong ({code})",
+  "@errorGeneric": {
+    "placeholders": {
+      "code": {
+        "type": "String"
+      }
+    }
+  },
+  "uploadFailedNetwork": "Upload failed. Check your connection.",
+  "uploadFailedCode": "Upload failed ({code}).",
+  "@uploadFailedCode": {
+    "placeholders": {
+      "code": {
+        "type": "String"
+      }
+    }
+  },
+  "timeNow": "now",
+  "timeMinutes": "{n}m",
+  "@timeMinutes": {
+    "description": "Compact \"minutes ago\"",
+    "placeholders": {
+      "n": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "timeHours": "{n}h",
+  "@timeHours": {
+    "description": "Compact \"hours ago\"",
+    "placeholders": {
+      "n": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "timeDays": "{n}d",
+  "@timeDays": {
+    "description": "Compact \"days ago\"",
+    "placeholders": {
+      "n": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "verified": "Verified",
+  "reactionName": "{kind, select, like{like} love{love} wow{wow} laugh{laugh} sad{sad} other{{kind}}}",
+  "@reactionName": {
+    "placeholders": {
+      "kind": {
+        "type": "String"
+      }
+    }
+  },
+  "authWelcomeBack": "Welcome back",
+  "authSignInSubtitle": "Sign in to see what your friends are up to.",
+  "authTwoStepTitle": "Two-step check",
+  "authTwoStepSubtitle": "Enter the 6-digit code from your authenticator app, or a backup code.",
+  "fieldEmailOrUsername": "Email or username",
+  "fieldPassword": "Password",
+  "showPassword": "Show password",
+  "hidePassword": "Hide password",
+  "forgotPassword": "Forgot password?",
+  "fieldCode": "Code",
+  "verify": "Verify",
+  "signIn": "Sign in",
+  "continueWithPhone": "Continue with phone",
+  "newHere": "New here?",
+  "createAccount": "Create account",
+  "backToSignIn": "Back to sign in",
+  "errorEnterCredentials": "Enter your email or username and password",
+  "registerTitle": "Create your account",
+  "registerSubtitle": "Join the community. It takes a minute.",
+  "fieldDisplayNameOptional": "Display name (optional)",
+  "fieldUsername": "Username",
+  "usernameHelper": "3-30 letters, numbers or _",
+  "usernameInvalid": "Use 3-30 letters, numbers or _",
+  "fieldEmail": "Email",
+  "emailInvalid": "Enter a valid email",
+  "passwordHelper": "At least 8 characters",
+  "passwordTooShort": "At least 8 characters",
+  "fieldReferralOptional": "Referral code (optional)",
+  "phoneTitleEnterCode": "Enter the code",
+  "phoneTitle": "Your phone number",
+  "phoneCodeSent": "We sent a 6-digit code to {phone}.",
+  "@phoneCodeSent": {
+    "placeholders": {
+      "phone": {
+        "type": "String"
+      }
+    }
+  },
+  "phoneFormatHint": "Use international format, e.g. {example}.",
+  "@phoneFormatHint": {
+    "placeholders": {
+      "example": {
+        "type": "String"
+      }
+    }
+  },
+  "fieldPhone": "Phone number",
+  "field2faCode": "2FA code",
+  "sendCode": "Send code",
+  "resetTitle": "Reset password",
+  "resetSentSubtitle": "If that email has an account, a code is on its way.",
+  "resetSubtitle": "We will email you a 6-digit code.",
+  "fieldNewPassword": "New password",
+  "passwordUpdated": "Password updated. Sign in with your new password.",
+  "updatePassword": "Update password",
+  "search": "Search",
+  "notifications": "Notifications",
+  "feedEmptyTitle": "Your feed is quiet",
+  "feedEmptyMessage": "Follow people or create your first post.",
+  "yourStory": "Your story",
+  "addToYourStory": "Add to your story",
+  "userStorySemantic": "{name} story",
+  "@userStorySemantic": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "levelShort": "Lv {level}",
+  "@levelShort": {
+    "placeholders": {
+      "level": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "imageUnavailable": "Image unavailable",
+  "commentsSemantic": "Comments, {count}",
+  "@commentsSemantic": {
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "reactSemantic": "React, {count} reactions",
+  "@reactSemantic": {
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "yourReactionSemantic": "Your reaction: {reaction}, {count} reactions. Tap to remove",
+  "@yourReactionSemantic": {
+    "placeholders": {
+      "reaction": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "reactHint": "Long press for more reactions",
+  "pollVotes": "{count, plural, =1{1 vote} other{{count} votes}}",
+  "@pollVotes": {
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "commentsTitle": "Comments",
+  "reply": "Reply",
+  "viewReplies": "View replies",
+  "noComments": "No comments yet. Start the conversation.",
+  "replyingTo": "Replying to {name}",
+  "@replyingTo": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "cancelReply": "Cancel reply",
+  "addComment": "Add a comment",
+  "sendComment": "Send comment",
+  "someone": "Someone",
+  "couldNotOpenGallery": "Could not open your gallery: {error}",
+  "@couldNotOpenGallery": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "composerEmpty": "Write something or add a photo or video",
+  "pollNeedsTwo": "A poll needs at least 2 options",
+  "posted": "Posted",
+  "scheduled": "Scheduled",
+  "pickFutureTime": "Pick a time in the future",
+  "newPost": "New post",
+  "close": "Close",
+  "post": "Post",
+  "schedule": "Schedule",
+  "composerHint": "What's on your mind? Use #hashtags and @mentions",
+  "uploading": "Uploading",
+  "shortReel": "Short reel",
+  "regularVideo": "Regular video",
+  "pollOption": "Option {n}",
+  "@pollOption": {
+    "placeholders": {
+      "n": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "addOption": "Add option",
+  "photo": "Photo",
+  "video": "Video",
+  "poll": "Poll",
+  "scheduledAt": "At {date}",
+  "@scheduledAt": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "clearSchedule": "Clear schedule",
+  "whoCanSee": "Who can see this",
+  "visibilityPublic": "Public",
+  "visibilityFollowers": "Followers",
+  "visibilityPrivate": "Only me",
+  "selectedPhoto": "Selected photo",
+  "fileSize": "{name} · {size} MB",
+  "@fileSize": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "removeAttachment": "Remove attachment",
+  "couldNotOpen": "Could not open that: {error}",
+  "@couldNotOpen": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "storyShared": "Story shared for 24 hours",
+  "newStory": "New story",
+  "share": "Share",
+  "shareMoment": "Share a moment",
+  "storiesDisappear": "Stories disappear after 24 hours.",
+  "storyPreview": "Story preview",
+  "addCaption": "Add a caption",
+  "chooseDifferentFile": "Choose a different file",
+  "reactionSent": "Sent {emoji}",
+  "@reactionSent": {
+    "placeholders": {
+      "emoji": {
+        "type": "String"
+      }
+    }
+  },
+  "storyUnavailable": "Story unavailable",
+  "storyViews": "{count, plural, =1{1 view} other{{count} views}}",
+  "@storyViews": {
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "reactWith": "React {reaction}",
+  "@reactWith": {
+    "placeholders": {
+      "reaction": {
+        "type": "String"
+      }
+    }
+  },
+  "videoUnavailable": "Video unavailable",
+  "playVideo": "Play video {title}",
+  "@playVideo": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "forYou": "For you",
+  "trending": "Trending",
+  "noReels": "No reels yet",
+  "noReelsMessage": "Short videos will show up here.",
+  "loved": "Loved",
+  "chats": "Chats",
+  "chat": "Chat",
+  "newChat": "New chat",
+  "noConversations": "No conversations yet",
+  "noConversationsMessage": "Find a friend and say hello.",
+  "startChat": "Start a chat",
+  "noMessagesYet": "No messages yet",
+  "sayHello": "Say hello",
+  "unreadCount": "{count} unread",
+  "@unreadCount": {
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "typing": "typing…",
+  "sending": "Sending…",
+  "messageHint": "Message",
+  "send": "Send",
+  "messageNotSent": "Message not sent: {error}",
+  "@messageNotSent": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "sentMedia": "{type, select, image{Sent a photo} video{Sent a video} voice{Sent a voice message} file{Sent a file} sticker{Sent a sticker} other{Sent a {type}}}",
+  "@sentMedia": {
+    "placeholders": {
+      "type": {
+        "type": "String"
+      }
+    }
+  },
+  "profile": "Profile",
+  "editProfile": "Edit profile",
+  "walletAndRewards": "Wallet and rewards",
+  "leaderboard": "Leaderboard",
+  "inviteFriends": "Invite friends",
+  "yourCode": "Your code: {code}",
+  "@yourCode": {
+    "placeholders": {
+      "code": {
+        "type": "String"
+      }
+    }
+  },
+  "copyCode": "Copy code",
+  "codeCopied": "Code copied",
+  "themeAuto": "Auto",
+  "themeLight": "Light",
+  "themeDark": "Dark",
+  "signOut": "Sign out",
+  "displayName": "Display name",
+  "bio": "Bio",
+  "save": "Save",
+  "luckyDraw": "Lucky Draw",
+  "statFollowers": "Followers",
+  "statFollowing": "Following",
+  "followingButton": "Following",
+  "follow": "Follow",
+  "message": "Message",
+  "levelXp": "Level {level} · {xp} XP",
+  "@levelXp": {
+    "placeholders": {
+      "level": {
+        "type": "int",
+        "format": "decimalPattern"
+      },
+      "xp": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "language": "Language",
+  "languageSystem": "System default",
+  "findSomeone": "Find someone to message",
+  "searchHint": "Search people, posts, #tags",
+  "peopleYouMayKnow": "People you may know",
+  "mutualCount": "{count} mutual",
+  "@mutualCount": {
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "noResults": "No results",
+  "nothingFound": "Nothing found for \"{query}\".",
+  "@nothingFound": {
+    "placeholders": {
+      "query": {
+        "type": "String"
+      }
+    }
+  },
+  "followersCount": "{count, plural, =1{1 follower} other{{count} followers}}",
+  "@followersCount": {
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "compact"
+      }
+    }
+  },
+  "hashtagPosts": "{count, plural, =1{1 post} other{{count} posts}}",
+  "@hashtagPosts": {
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "postsHeader": "Posts",
+  "streakReward": "Day {streak} streak: +{coins} coins",
+  "@streakReward": {
+    "placeholders": {
+      "streak": {
+        "type": "int",
+        "format": "decimalPattern"
+      },
+      "coins": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "rewardClaimed": "Reward claimed",
+  "coins": "Coins",
+  "claimDaily": "Claim daily reward",
+  "badges": "Badges",
+  "noBadges": "No badges yet. Post, comment and invite friends to earn them.",
+  "challenges": "Challenges",
+  "challengeProgress": "{progress}/{target} · +{coins} coins",
+  "@challengeProgress": {
+    "placeholders": {
+      "progress": {
+        "type": "int",
+        "format": "decimalPattern"
+      },
+      "target": {
+        "type": "int",
+        "format": "decimalPattern"
+      },
+      "coins": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "join": "Join",
+  "claim": "Claim",
+  "history": "History",
+  "noTransactions": "No transactions yet.",
+  "txReason": "{reason, select, daily{Daily} referral{Referral} luckydraw{Luckydraw} challenge{Challenge} other{{reason}}}",
+  "@txReason": {
+    "placeholders": {
+      "reason": {
+        "type": "String"
+      }
+    }
+  },
+  "badgeName": "{code, select, first_post{First Post} chatterbox{Chatterbox} popular{Popular} level_5{Level 5} streak_7{Week Streak} connector{Connector} other{{name}}}",
+  "@badgeName": {
+    "placeholders": {
+      "code": {
+        "type": "String"
+      },
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "thisWeek": "This week",
+  "allTime": "All time",
+  "noActivity": "No activity yet",
+  "levelN": "Level {level}",
+  "@levelN": {
+    "placeholders": {
+      "level": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "xpCount": "{xp} XP",
+  "@xpCount": {
+    "placeholders": {
+      "xp": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "allCaughtUp": "All caught up",
+  "newActivity": "New activity will show up here.",
+  "notAvailable": "Not available",
+  "luckyRegion": "Lucky Draw is not available in your region right now.",
+  "noCampaigns": "No campaigns right now",
+  "campaignStatus": "{status, select, open{Open} closed{Closed} published{Published} cancelled{Cancelled} draft{Draft} other{{status}}}",
+  "@campaignStatus": {
+    "placeholders": {
+      "status": {
+        "type": "String"
+      }
+    }
+  },
+  "freeEntry": "Free entry",
+  "coinsPerEntry": "{coins} coins per entry",
+  "@coinsPerEntry": {
+    "placeholders": {
+      "coins": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "entryTerms": "{price} · up to {max} entries",
+  "@entryTerms": {
+    "placeholders": {
+      "price": {
+        "type": "String"
+      },
+      "max": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "entered": "Entered! You have {entries} of {max} entries",
+  "@entered": {
+    "placeholders": {
+      "entries": {
+        "type": "int",
+        "format": "decimalPattern"
+      },
+      "max": {
+        "type": "int",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "getEntry": "Get an entry",
+  "callAudio": "Audio call",
+  "callVideo": "Video call",
+  "callIncomingAudio": "Incoming audio call",
+  "callIncomingVideo": "Incoming video call",
+  "callCalling": "Calling…",
+  "callConnecting": "Connecting…",
+  "callReconnecting": "Reconnecting…",
+  "callEndReason": "{reason, select, declined{Call declined} busy{Busy} noAnswer{No answer} missed{Missed call} answeredElsewhere{Answered on another device} failed{Call failed} permissionDenied{Allow microphone and camera access to make calls} notConfigured{Calling isn't available right now} other{Call ended}}",
+  "@callEndReason": {
+    "placeholders": {
+      "reason": {
+        "type": "String"
+      }
+    }
+  },
+  "acceptCall": "Accept",
+  "declineCall": "Decline",
+  "endCall": "End call",
+  "mute": "Mute",
+  "unmute": "Unmute",
+  "cameraOff": "Turn camera off",
+  "cameraOn": "Turn camera on",
+  "switchCamera": "Switch camera",
+  "cameraShort": "Camera",
+  "flipShort": "Flip",
+  "speaker": "Speaker",
+  "minimize": "Minimize",
+  "returnToCall": "Tap to return to the call",
+  "callsTitle": "Calls",
+  "callHistory": "Call history",
+  "noCalls": "No calls yet",
+  "noCallsMessage": "Your calls will show up here.",
+  "callOutgoing": "Outgoing",
+  "callIncoming": "Incoming",
+  "callMissedLabel": "Missed",
+  "callDeclinedLabel": "Declined",
+  "callBack": "Call back",
+  "openSettings": "Open settings",
+  "callsUnavailable": "Calls are available in the mobile app.",
+  "callNotRinging": "This call has ended.",
+  "moreOptions": "More options",
+  "reportUser": "Report",
+  "blockUser": "Block",
+  "cancel": "Cancel",
+  "blockConfirmTitle": "Block {name}?",
+  "@blockConfirmTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "blockConfirmBody": "They won't be able to see your profile or posts, follow you, message you or call you. They won't be told that you blocked them.",
+  "userBlocked": "{name} is blocked",
+  "@userBlocked": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "reportTitle": "Report {name}",
+  "@reportTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "reportReasonPrompt": "Why are you reporting this account?",
+  "reportReason": "{reason, select, spam{Spam} harassment{Harassment or bullying} hate{Hate speech} sexual{Sexual content} violence{Violence or threats} self_harm{Self-harm or suicide} other{Something else}}",
+  "@reportReason": {
+    "placeholders": {
+      "reason": {
+        "type": "String"
+      }
+    }
+  },
+  "reportDetailsHint": "Add details (optional)",
+  "submitReport": "Send report",
+  "reportSent": "Thanks for telling us. Our team will review it.",
+  "blockedAccounts": "Blocked accounts",
+  "noBlocked": "You haven't blocked anyone.",
+  "unblock": "Unblock",
+  "userUnblocked": "{name} is unblocked",
+  "@userUnblocked": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "deleteAccount": "Delete account",
+  "deleteAccountTitle": "Delete your account?",
+  "deleteAccountBody": "This permanently removes your profile, posts, comments, stories and uploaded photos and videos, and signs you out on every device. It can't be undone.",
+  "deleteTypeToConfirm": "Type {word} to confirm",
+  "@deleteTypeToConfirm": {
+    "placeholders": {
+      "word": {
+        "type": "String"
+      }
+    }
+  },
+  "deleteForever": "Delete forever",
+  "accountDeleted": "Your account has been deleted.",
+  "reportPost": "Report post",
+  "reportComment": "Report comment",
+  "reportPostPrompt": "Why are you reporting this post?",
+  "reportCommentPrompt": "Why are you reporting this comment?",
+  "groups": "Groups",
+  "pages": "Pages",
+  "yourGroups": "Your groups",
+  "yourPages": "Pages you follow",
+  "discover": "Discover",
+  "searchGroups": "Search groups",
+  "searchPages": "Search pages",
+  "noYourGroups": "You haven't joined any groups yet.",
+  "noYourPages": "You don't follow any pages yet.",
+  "noGroupsFound": "No groups found",
+  "noPagesFound": "No pages found",
+  "createGroup": "Create group",
+  "createPage": "Create page",
+  "groupName": "Group name",
+  "pageName": "Page name",
+  "descriptionOptional": "Description (optional)",
+  "nameTooShort": "Use at least 2 characters",
+  "groupPublic": "Public",
+  "groupPrivate": "Private",
+  "groupPublicHint": "Anyone can see posts and join.",
+  "groupPrivateHint": "Only members see posts. Admins approve new members.",
+  "pageTypeLabel": "Page type",
+  "pageType": "{type, select, business{Business} community{Community} creator{Creator} other{{type}}}",
+  "@pageType": {
+    "placeholders": {
+      "type": {
+        "type": "String"
+      }
+    }
+  },
+  "create": "Create",
+  "requested": "Requested",
+  "leave": "Leave",
+  "unfollow": "Unfollow",
+  "requestSent": "Request sent. An admin will review it.",
+  "memberCount": "{count, plural, =1{1 member} other{{count} members}}",
+  "@memberCount": {
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "format": "compact"
+      }
+    }
+  },
+  "members": "Members",
+  "roleName": "{role, select, owner{Owner} admin{Admin} moderator{Moderator} other{Member}}",
+  "@roleName": {
+    "placeholders": {
+      "role": {
+        "type": "String"
+      }
+    }
+  },
+  "wantsToJoin": "Wants to join",
+  "approve": "Approve",
+  "declineRequest": "Decline",
+  "privateGroupTitle": "This group is private",
+  "privateGroupMessage": "Join to see its posts and members.",
+  "noCommunityPosts": "No posts yet"
+}

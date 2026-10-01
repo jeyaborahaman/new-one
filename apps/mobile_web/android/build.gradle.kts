@@ -1,3 +1,7 @@
+// Plugins that read rootProject.ext (e.g. agora_rtc_engine defaults to 31) compile against this SDK;
+// permission_handler_android needs 37. Compile-time only: minSdk/targetSdk are unchanged.
+extra["compileSdkVersion"] = 37
+
 allprojects {
     repositories {
         google()

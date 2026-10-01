@@ -5,6 +5,7 @@ import '../../core/network/api_client.dart';
 import '../../core/providers.dart';
 import '../../core/theme/tokens.dart';
 import '../../core/widgets/common.dart';
+import '../../core/l10n.dart';
 
 class AuthScaffold extends StatelessWidget {
   const AuthScaffold({super.key, required this.title, required this.subtitle, required this.children, this.back = false});
@@ -55,35 +56,35 @@ class _LoginState extends ConsumerState<LoginScreen> with BusyMixin {
   Future<void> _submit() => run(() async {
         final auth = ref.read(authProvider.notifier);
         if (_challenge != null) { await auth.verify2fa(_challenge!, _code.text.trim()); return; }
-        if (_id.text.trim().isEmpty || _pw.text.isEmpty) throw ApiException('Enter your email or username and password');
+        if (_id.text.trim().isEmpty || _pw.text.isEmpty) throw ApiException(context.l10n.errorEnterCredentials);
         final r = await auth.login(_id.text.trim(), _pw.text);
         if (r.needs2fa && mounted) setState(() => _challenge = r.challengeToken);
       });
 
   @override
   Widget build(BuildContext context) {
-    final twoFa = _challenge != null;
+    final twoFa = _challenge != null; final l = context.l10n;
     return AuthScaffold(
-      title: twoFa ? 'Two-step check' : 'Welcome back',
-      subtitle: twoFa ? 'Enter the 6-digit code from your authenticator app, or a backup code.' : 'Sign in to see what your friends are up to.',
+      title: twoFa ? l.authTwoStepTitle : l.authWelcomeBack,
+      subtitle: twoFa ? l.authTwoStepSubtitle : l.authSignInSubtitle,
       children: [
         if (!twoFa) ...[
-          TextField(controller: _id, decoration: const InputDecoration(labelText: 'Email or username'), keyboardType: TextInputType.emailAddress, autofillHints: const [AutofillHints.username], textInputAction: TextInputAction.next),
+          TextField(controller: _id, decoration: InputDecoration(labelText: l.fieldEmailOrUsername), keyboardType: TextInputType.emailAddress, autofillHints: const [AutofillHints.username], textInputAction: TextInputAction.next),
           const SizedBox(height: Sp.s3),
           TextField(controller: _pw, obscureText: _hide, autofillHints: const [AutofillHints.password], onSubmitted: (_) => _submit(),
-              decoration: InputDecoration(labelText: 'Password', suffixIcon: IconButton(tooltip: _hide ? 'Show password' : 'Hide password', icon: Icon(_hide ? Icons.visibility_outlined : Icons.visibility_off_outlined), onPressed: () => setState(() => _hide = !_hide)))),
-          Align(alignment: Alignment.centerRight, child: TextButton(onPressed: () => context.push('/forgot'), child: const Text('Forgot password?'))),
+              decoration: InputDecoration(labelText: l.fieldPassword, suffixIcon: IconButton(tooltip: _hide ? l.showPassword : l.hidePassword, icon: Icon(_hide ? Icons.visibility_outlined : Icons.visibility_off_outlined), onPressed: () => setState(() => _hide = !_hide)))),
+          Align(alignment: AlignmentDirectional.centerEnd, child: TextButton(onPressed: () => context.push('/forgot'), child: Text(l.forgotPassword))),
         ] else
-          TextField(controller: _code, decoration: const InputDecoration(labelText: 'Code'), autofocus: true, onSubmitted: (_) => _submit()),
+          TextField(controller: _code, decoration: InputDecoration(labelText: l.fieldCode), autofocus: true, textDirection: TextDirection.ltr, onSubmitted: (_) => _submit()),
         errorText(context),
-        FilledButton(onPressed: busy ? null : _submit, child: busy ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2)) : Text(twoFa ? 'Verify' : 'Sign in')),
+        FilledButton(onPressed: busy ? null : _submit, child: busy ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2)) : Text(twoFa ? l.verify : l.signIn)),
         if (!twoFa) ...[
           const SizedBox(height: Sp.s3),
-          OutlinedButton.icon(onPressed: () => context.push('/phone'), icon: const Icon(Icons.phone_iphone), label: const Text('Continue with phone')),
+          OutlinedButton.icon(onPressed: () => context.push('/phone'), icon: const Icon(Icons.phone_iphone), label: Text(l.continueWithPhone)),
           const SizedBox(height: Sp.s4),
-          Row(mainAxisAlignment: MainAxisAlignment.center, children: [Text('New here?', style: TextStyle(color: context.tk.inkMuted)), TextButton(onPressed: () => context.push('/register'), child: const Text('Create account'))]),
+          Row(mainAxisAlignment: MainAxisAlignment.center, children: [Text(l.newHere, style: TextStyle(color: context.tk.inkMuted)), TextButton(onPressed: () => context.push('/register'), child: Text(l.createAccount))]),
         ] else
-          TextButton(onPressed: () => setState(() { _challenge = null; error = null; }), child: const Text('Back to sign in')),
+          TextButton(onPressed: () => setState(() { _challenge = null; error = null; }), child: Text(l.backToSignIn)),
       ],
     );
   }
@@ -99,25 +100,28 @@ class _RegisterState extends ConsumerState<RegisterScreen> with BusyMixin {
   Future<void> _submit() { if (!_form.currentState!.validate()) return Future.value(); return run(() async { await ref.read(authProvider.notifier).register(email: _email.text.trim(), username: _user.text.trim(), password: _pw.text, displayName: _name.text.trim(), referral: _ref.text.trim()); }); }
 
   @override
-  Widget build(BuildContext context) => AuthScaffold(
-        back: true, title: 'Create your account', subtitle: 'Join the community. It takes a minute.',
+  Widget build(BuildContext context) {
+    final l = context.l10n;
+    return AuthScaffold(
+        back: true, title: l.registerTitle, subtitle: l.registerSubtitle,
         children: [
           Form(key: _form, child: Column(children: [
-            TextFormField(controller: _name, decoration: const InputDecoration(labelText: 'Display name (optional)')),
+            TextFormField(controller: _name, decoration: InputDecoration(labelText: l.fieldDisplayNameOptional)),
             const SizedBox(height: Sp.s3),
-            TextFormField(controller: _user, decoration: const InputDecoration(labelText: 'Username', helperText: '3-30 letters, numbers or _'), validator: (v) => RegExp(r'^[a-zA-Z0-9_]{3,30}$').hasMatch(v ?? '') ? null : 'Use 3-30 letters, numbers or _'),
+            TextFormField(controller: _user, textDirection: TextDirection.ltr, decoration: InputDecoration(labelText: l.fieldUsername, helperText: l.usernameHelper), validator: (v) => RegExp(r'^[a-zA-Z0-9_]{3,30}$').hasMatch(v ?? '') ? null : l.usernameInvalid),
             const SizedBox(height: Sp.s3),
-            TextFormField(controller: _email, keyboardType: TextInputType.emailAddress, decoration: const InputDecoration(labelText: 'Email'), validator: (v) => RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(v ?? '') ? null : 'Enter a valid email'),
+            TextFormField(controller: _email, keyboardType: TextInputType.emailAddress, textDirection: TextDirection.ltr, decoration: InputDecoration(labelText: l.fieldEmail), validator: (v) => RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(v ?? '') ? null : l.emailInvalid),
             const SizedBox(height: Sp.s3),
-            TextFormField(controller: _pw, obscureText: true, decoration: const InputDecoration(labelText: 'Password', helperText: 'At least 8 characters'), validator: (v) => (v ?? '').length >= 8 ? null : 'At least 8 characters'),
+            TextFormField(controller: _pw, obscureText: true, decoration: InputDecoration(labelText: l.fieldPassword, helperText: l.passwordHelper), validator: (v) => (v ?? '').length >= 8 ? null : l.passwordTooShort),
             const SizedBox(height: Sp.s3),
-            TextFormField(controller: _ref, decoration: const InputDecoration(labelText: 'Referral code (optional)')),
+            TextFormField(controller: _ref, textDirection: TextDirection.ltr, decoration: InputDecoration(labelText: l.fieldReferralOptional)),
           ])),
           const SizedBox(height: Sp.s4),
           errorText(context),
-          FilledButton(onPressed: busy ? null : _submit, child: busy ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2)) : const Text('Create account')),
+          FilledButton(onPressed: busy ? null : _submit, child: busy ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2)) : Text(l.createAccount)),
         ],
       );
+  }
 }
 
 class PhoneScreen extends ConsumerStatefulWidget { const PhoneScreen({super.key}); @override ConsumerState<PhoneScreen> createState() => _PhoneState(); }
@@ -128,11 +132,13 @@ class _PhoneState extends ConsumerState<PhoneScreen> with BusyMixin {
   void dispose() { _phone.dispose(); _code.dispose(); super.dispose(); }
 
   @override
-  Widget build(BuildContext context) => AuthScaffold(
-        back: true, title: _sent ? 'Enter the code' : 'Your phone number', subtitle: _sent ? 'We sent a 6-digit code to ${_phone.text}.' : 'Use international format, e.g. +14155550123.',
+  Widget build(BuildContext context) {
+    final l = context.l10n;
+    return AuthScaffold(
+        back: true, title: _sent ? l.phoneTitleEnterCode : l.phoneTitle, subtitle: _sent ? l.phoneCodeSent(isolate(_phone.text)) : l.phoneFormatHint(isolate('+14155550123')),
         children: [
-          TextField(controller: _phone, enabled: !_sent, keyboardType: TextInputType.phone, decoration: const InputDecoration(labelText: 'Phone number')),
-          if (_sent) ...[const SizedBox(height: Sp.s3), TextField(controller: _code, keyboardType: TextInputType.number, maxLength: _challenge == null ? 6 : 12, autofocus: true, decoration: InputDecoration(labelText: _challenge == null ? 'Code' : '2FA code'))],
+          TextField(controller: _phone, enabled: !_sent, keyboardType: TextInputType.phone, textDirection: TextDirection.ltr, decoration: InputDecoration(labelText: l.fieldPhone)),
+          if (_sent) ...[const SizedBox(height: Sp.s3), TextField(controller: _code, keyboardType: TextInputType.number, maxLength: _challenge == null ? 6 : 12, autofocus: true, textDirection: TextDirection.ltr, decoration: InputDecoration(labelText: _challenge == null ? l.fieldCode : l.field2faCode))],
           const SizedBox(height: Sp.s3),
           errorText(context),
           FilledButton(
@@ -143,10 +149,11 @@ class _PhoneState extends ConsumerState<PhoneScreen> with BusyMixin {
               final r = await a.verifyOtp(_phone.text.trim(), _code.text.trim());
               if (r.needs2fa) { setState(() { _challenge = r.challengeToken; _code.clear(); }); } else if (context.mounted) { context.go('/'); }
             }),
-            child: Text(_sent ? 'Verify' : 'Send code'),
+            child: Text(_sent ? l.verify : l.sendCode),
           ),
         ],
       );
+  }
 }
 
 class ForgotScreen extends ConsumerStatefulWidget { const ForgotScreen({super.key}); @override ConsumerState<ForgotScreen> createState() => _ForgotState(); }
@@ -157,13 +164,15 @@ class _ForgotState extends ConsumerState<ForgotScreen> with BusyMixin {
   void dispose() { _email.dispose(); _code.dispose(); _pw.dispose(); super.dispose(); }
 
   @override
-  Widget build(BuildContext context) => AuthScaffold(
-        back: true, title: 'Reset password', subtitle: _sent ? 'If that email has an account, a code is on its way.' : 'We will email you a 6-digit code.',
+  Widget build(BuildContext context) {
+    final l = context.l10n;
+    return AuthScaffold(
+        back: true, title: l.resetTitle, subtitle: _sent ? l.resetSentSubtitle : l.resetSubtitle,
         children: [
-          TextField(controller: _email, enabled: !_sent, keyboardType: TextInputType.emailAddress, decoration: const InputDecoration(labelText: 'Email')),
+          TextField(controller: _email, enabled: !_sent, keyboardType: TextInputType.emailAddress, textDirection: TextDirection.ltr, decoration: InputDecoration(labelText: l.fieldEmail)),
           if (_sent) ...[
-            const SizedBox(height: Sp.s3), TextField(controller: _code, keyboardType: TextInputType.number, maxLength: 6, decoration: const InputDecoration(labelText: 'Code')),
-            const SizedBox(height: Sp.s3), TextField(controller: _pw, obscureText: true, decoration: const InputDecoration(labelText: 'New password', helperText: 'At least 8 characters')),
+            const SizedBox(height: Sp.s3), TextField(controller: _code, keyboardType: TextInputType.number, maxLength: 6, textDirection: TextDirection.ltr, decoration: InputDecoration(labelText: l.fieldCode)),
+            const SizedBox(height: Sp.s3), TextField(controller: _pw, obscureText: true, decoration: InputDecoration(labelText: l.fieldNewPassword, helperText: l.passwordHelper)),
           ],
           const SizedBox(height: Sp.s3),
           errorText(context),
@@ -172,10 +181,11 @@ class _ForgotState extends ConsumerState<ForgotScreen> with BusyMixin {
               final a = ref.read(authProvider.notifier);
               if (!_sent) { await a.forgot(_email.text.trim().toLowerCase()); setState(() => _sent = true); return; }
               await a.reset(_email.text.trim().toLowerCase(), _code.text.trim(), _pw.text);
-              if (context.mounted) { toast(context, 'Password updated. Sign in with your new password.'); context.go('/login'); }
+              if (context.mounted) { toast(context, l.passwordUpdated); context.go('/login'); }
             }),
-            child: Text(_sent ? 'Update password' : 'Send code'),
+            child: Text(_sent ? l.updatePassword : l.sendCode),
           ),
         ],
       );
+  }
 }

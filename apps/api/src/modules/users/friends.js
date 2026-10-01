@@ -6,6 +6,7 @@ const { authenticate } = require('../../middleware/auth');
 const asyncHandler = require('../../utils/asyncHandler');
 const { err } = require('../../utils/errors');
 const { notify } = require('../notify/service');
+const { assertNotBlocked } = require('./blocks');
 router.use(authenticate);
 const uidParam = z.object({ uid: z.coerce.number().int().positive() });
 
@@ -20,11 +21,12 @@ router.post('/requests', validate({ body: z.object({ user_id: z.number().int().p
   const to = req.body.user_id;
   if (to === req.user.id) throw err.badRequest('Cannot befriend yourself');
   if (!(await db('users').where({ id: to, status: 'active' }).first('id'))) throw err.notFound('User not found');
+  await assertNotBlocked(req.user.id, to);
   const existing = await db('friendships').where((w) => w.where({ requester_id: req.user.id, addressee_id: to }).orWhere({ requester_id: to, addressee_id: req.user.id })).first();
   if (existing) throw err.conflict(existing.status === 'accepted' ? 'Already friends' : 'Request already exists');
   await db('friendships').insert({ requester_id: req.user.id, addressee_id: to });
   const me = await db('users').where({ id: req.user.id }).first('display_name');
-  await notify(to, 'friend_request', { title: me.display_name, body: 'Sent you a friend request', data: { user_id: req.user.id } });
+  await notify(to, 'friend_request', { title: me.display_name, body: 'Sent you a friend request', t: { body: ['friend_request'] }, data: { user_id: req.user.id } });
   res.status(201).json({ status: 'pending' });
 }));
 router.post('/requests/:uid/accept', validate({ params: uidParam }), asyncHandler(async (req, res) => {

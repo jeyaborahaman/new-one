@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'l10n.dart';
 import 'network/api_client.dart';
 import 'network/socket_service.dart';
 import 'models.dart';
@@ -11,8 +13,35 @@ final socketProvider = Provider<SocketService>((ref) { final s = SocketService()
 
 final apiProvider = Provider<ApiClient>((ref) {
   final store = ref.watch(tokenStoreProvider);
-  return ApiClient(store, onSignedOut: () => ref.read(authProvider.notifier).forceSignedOut());
+  return ApiClient(store, onSignedOut: () => ref.read(authProvider.notifier).forceSignedOut(), language: () => effectiveLanguage(ref.read(localeProvider)));
 });
+
+/// Small non-secret preferences (the chosen language). Same platform storage the tokens use, so no extra plugin.
+final prefsStorageProvider = Provider<FlutterSecureStorage>((_) => const FlutterSecureStorage());
+
+/// The user's language choice; null follows the device (falling back to English).
+class LocaleController extends Notifier<Locale?> {
+  static const _key = 'app_locale';
+  @override
+  Locale? build() => null;
+  FlutterSecureStorage get _store => ref.read(prefsStorageProvider);
+
+  /// Restores the saved choice at start-up.
+  Future<void> load() async {
+    try {
+      final v = await _store.read(key: _key);
+      if (v != null && supportedLanguages.contains(v)) state = Locale(v);
+    } catch (_) { /* storage unavailable: keep following the device */ }
+  }
+
+  /// Saves the choice and tells the server, so push notifications arrive in this language.
+  Future<void> set(Locale? locale) async {
+    state = locale;
+    try { locale == null ? await _store.delete(key: _key) : await _store.write(key: _key, value: locale.languageCode); } catch (_) {}
+    await ref.read(authProvider.notifier).syncLanguage();
+  }
+}
+final localeProvider = NotifierProvider<LocaleController, Locale?>(LocaleController.new);
 
 class ThemeModeController extends Notifier<ThemeMode> {
   @override
@@ -73,7 +102,8 @@ class AuthController extends Notifier<AuthState> {
 
   Future<void> _enter(User u) async {
     state = AuthState(AuthStatus.signedIn, u);
-    ref.read(socketProvider).connect(_store.access!);
+    ref.read(socketProvider).connect(() => _store.access, refresh: _api.refreshTokens);
+    unawaited(syncLanguage());
     unawaited(ref.read(pushServiceProvider).start()); // optional; never blocks or fails sign-in
   }
 
@@ -93,6 +123,14 @@ class AuthController extends Notifier<AuthState> {
   Future<void> forgot(String email) => _api.post('/auth/password/forgot', body: {'email': email});
   Future<void> reset(String email, String code, String pw) => _api.post('/auth/password/reset', body: {'email': email, 'code': code, 'new_password': pw});
 
+  /// Keeps the account's language (used for push texts) in step with the app. Best effort.
+  Future<void> syncLanguage() async {
+    final u = state.user;
+    final lang = effectiveLanguage(ref.read(localeProvider));
+    if (state.status != AuthStatus.signedIn || u == null || u.locale == lang) return;
+    try { state = AuthState(AuthStatus.signedIn, User.fromJson(await _api.patch('/users/me', body: {'locale': lang}))); } catch (_) {}
+  }
+
   Future<void> refreshUser() async { if (state.status == AuthStatus.signedIn) state = AuthState(AuthStatus.signedIn, User.fromJson(await _api.get('/users/me'))); }
 
   Future<void> logout() async {
@@ -102,6 +140,13 @@ class AuthController extends Notifier<AuthState> {
     forceSignedOut();
     await _store.clear();
   }
+
+  /// Permanently deletes the account (Phase 2 API). Throws ApiException (e.g. wrong password).
+  /// The caller closes its dialog first, then calls [signOutDeleted]: signing out navigates to the login screen.
+  Future<void> deleteAccount({String? password}) => _api.delete('/users/me', body: {'confirm': 'DELETE', 'password': ?password});
+
+  /// Local sign-out after the account was deleted (its sessions are already revoked on the server).
+  Future<void> signOutDeleted() async { forceSignedOut(); await _store.clear(); }
 
   void forceSignedOut() { unawaited(ref.read(pushServiceProvider).stop()); ref.read(socketProvider).disconnect(); state = const AuthState(AuthStatus.signedOut); }
 }

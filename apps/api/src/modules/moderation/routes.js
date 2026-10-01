@@ -12,6 +12,12 @@ router.use(authenticate);
 
 router.post('/reports', validate({ body: z.object({ target_type: z.enum(TARGETS), target_id: z.number().int().positive(), reason: z.enum(['spam', 'harassment', 'hate', 'sexual', 'violence', 'self_harm', 'other']), details: z.string().max(1000).optional() }).strict() }),
   asyncHandler(async (req, res) => {
+    const { target_type: type, target_id: targetId } = req.body;
+    if (type === 'user' && targetId === req.user.id) throw err.badRequest('You cannot report yourself');
+    const exists = type === 'user' ? db('users').where({ id: targetId }).whereNot({ status: 'deleted' })
+      : type === 'post' ? db('posts').where({ id: targetId }).whereNot({ status: 'removed' })
+      : db('comments').where({ id: targetId }).whereNull('deleted_at');
+    if (!(await exists.first('id'))) throw err.notFound(`${type[0].toUpperCase()}${type.slice(1)} not found`);
     const dup = await db('reports').where({ reporter_id: req.user.id, target_type: req.body.target_type, target_id: req.body.target_id, status: 'open' }).first('id');
     if (dup) throw err.conflict('You already reported this');
     const [id] = await db('reports').insert({ reporter_id: req.user.id, ...req.body });

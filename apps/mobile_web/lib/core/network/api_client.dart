@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../config.dart';
+import '../l10n.dart';
 
 class ApiException implements Exception {
   ApiException(this.message, {this.status, this.code, this.fields});
@@ -26,8 +27,9 @@ class TokenStore {
 
 /// Dio wrapper: bearer auth, one shared refresh on 401 (rotating refresh tokens must not race), friendly errors.
 class ApiClient {
-  ApiClient(this.tokens, {Dio? dio, this.onSignedOut}) : dio = dio ?? Dio(BaseOptions(baseUrl: apiBase, connectTimeout: const Duration(seconds: 15), receiveTimeout: const Duration(seconds: 30))) {
+  ApiClient(this.tokens, {Dio? dio, this.onSignedOut, String Function()? language}) : _language = language ?? (() => fallbackLanguage), dio = dio ?? Dio(BaseOptions(baseUrl: apiBase, connectTimeout: const Duration(seconds: 15), receiveTimeout: const Duration(seconds: 30))) {
     this.dio.interceptors.add(InterceptorsWrapper(onRequest: (o, h) {
+      o.headers['Accept-Language'] = _language(); // the API answers error messages in this language
       final t = tokens.access;
       if (t != null && o.extra['noAuth'] != true) o.headers['Authorization'] = 'Bearer $t';
       h.next(o);
@@ -46,8 +48,14 @@ class ApiClient {
   final Dio dio;
   final TokenStore tokens;
   final void Function()? onSignedOut;
+  final String Function() _language;
   Future<bool>? _refreshing;
 
+  /// Strings in the app's current language, for messages created outside widgets.
+  AppLocalizations get strings => stringsFor(_language());
+
+  /// Renews the token pair (shared with 401 handling, so concurrent callers never race). False = signed out.
+  Future<bool> refreshTokens() => _refreshOnce();
   Future<bool> _refreshOnce() => _refreshing ??= _doRefresh().whenComplete(() => _refreshing = null);
   Future<bool> _doRefresh() async {
     try {
@@ -67,8 +75,8 @@ class ApiClient {
       final er = d['error'] as Map;
       return ApiException(er['message']?.toString() ?? 'Request failed', status: e.response?.statusCode, code: er['code']?.toString(), fields: (er['fields'] as Map?)?.cast<String, dynamic>());
     }
-    if (e.type == DioExceptionType.connectionError || e.type == DioExceptionType.connectionTimeout) return ApiException('Cannot reach the server. Check your connection.');
-    return ApiException('Something went wrong (${e.response?.statusCode ?? 'network'})', status: e.response?.statusCode);
+    if (e.type == DioExceptionType.connectionError || e.type == DioExceptionType.connectionTimeout) return ApiException(strings.errorNetwork);
+    return ApiException(strings.errorGeneric('${e.response?.statusCode ?? 'network'}'), status: e.response?.statusCode);
   }
 
   Future<dynamic> _run(Future<Response> Function() f) async {

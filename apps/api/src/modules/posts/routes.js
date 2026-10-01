@@ -11,6 +11,7 @@ const { notify } = require('../notify/service');
 const { assertClean } = require('../moderation/service');
 const { requireReadyMedia } = require('../media/routes');
 const { visibleTo, hydrate, indexText, newestFirst } = require('./lib');
+const { notBlocked, blockedAmong } = require('../users/blocks');
 
 const idParam = z.object({ id: z.coerce.number().int().positive() });
 const KINDS = ['like', 'love', 'wow', 'laugh', 'sad'];
@@ -51,7 +52,8 @@ router.post('/', validate({ body: createBody }), asyncHandler(async (req, res) =
   if (!scheduled) {
     await grantXp(req.user.id, 10, 'post');
     const me = await db('users').where({ id: req.user.id }).first('display_name');
-    await Promise.all(mentions.filter((u) => u !== req.user.id).map((u) => notify(u, 'mention', { title: me.display_name, body: 'Mentioned you in a post', data: { post_id: id } })));
+    const blocked = new Set(await blockedAmong(req.user.id, mentions));
+    await Promise.all(mentions.filter((u) => u !== req.user.id && !blocked.has(u)).map((u) => notify(u, 'mention', { title: me.display_name, body: 'Mentioned you in a post', t: { body: ['mention'] }, data: { post_id: id } })));
   }
   res.status(201).json((await hydrate([await db('posts').where({ id }).first()], req.user.id))[0]);
 }));
@@ -93,7 +95,7 @@ router.put('/:id/reaction', validate({ params: idParam, body: z.object({ kind: z
   });
   if (isNew) { // XP and notification only for a first reaction, so re-tapping cannot farm rewards
     await grantXp(req.user.id, 1, 'reaction');
-    if (post.author_id !== req.user.id) await notify(post.author_id, 'reaction', { title: 'New reaction', body: `Someone reacted ${req.body.kind} to your post`, data: { post_id: post.id } });
+    if (post.author_id !== req.user.id) await notify(post.author_id, 'reaction', { title: 'New reaction', body: `Someone reacted ${req.body.kind} to your post`, t: { title: ['reaction_title'], body: ['reaction_post', { reaction: req.body.kind }] }, data: { post_id: post.id } });
   }
   res.json({ kind: req.body.kind, reactions_count });
 }));
@@ -149,7 +151,7 @@ router.post('/:id/comments', validate({ params: idParam, body: z.object({ body: 
 router.get('/:id/comments', validate({ params: idParam, query: pageQuery.extend({ parent_id: z.coerce.number().int().positive().optional() }) }), asyncHandler(async (req, res) => {
   await canSee(req.params.id, req.user.id);
   const { limit, cursor, parent_id } = req.query;
-  const q = db('comments').where({ post_id: req.params.id }).whereNull('deleted_at').orderBy('id', 'asc').limit(limit + 1);
+  const q = db('comments').where({ post_id: req.params.id }).whereNull('deleted_at').where(notBlocked('author_id', req.user.id)).orderBy('id', 'asc').limit(limit + 1);
   parent_id ? q.where({ parent_id }) : q.whereNull('parent_id');
   if (cursor) q.where('id', '>', cursor);
   const rows = await q;

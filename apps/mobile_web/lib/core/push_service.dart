@@ -85,6 +85,12 @@ class PushService {
 
   /// Maps a notification payload to a screen.
   static String? routeFor(Map<String, String> data) {
+    // Calls: a missed-call notice opens the call log; an incoming call opens the ringing screen (if still ringing).
+    if (data['type'] == 'call') {
+      if (data['missed'] == '1') return '/calls';
+      final call = data['call_id'];
+      return call != null && RegExp(r'^[0-9a-f-]{36}$').hasMatch(call) ? '/call/incoming/$call' : null;
+    }
     final chat = int.tryParse(data['conversation_id'] ?? '');
     if (chat != null) return '/chat/$chat?title=${Uri.encodeComponent(data['title'] ?? 'Chat')}';
     return switch (data['type']) { 'follow' || 'friend_request' || 'reaction' || 'comment' || 'mention' || 'story' || 'reward' || 'luckydraw' || 'live' => '/notifications', _ => null };

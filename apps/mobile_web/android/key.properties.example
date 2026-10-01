@@ -1,0 +1,9 @@
+# Copy to android/key.properties (git-ignored) and fill in. Keep the keystore and passwords out of git and backed up:
+# losing the upload key blocks Play Store updates until Google resets it.
+# Create a keystore once:
+#   keytool -genkey -v -keystore ~/keys/jeyabo-upload.jks -keyalg RSA -keysize 2048 -validity 10000 -alias upload
+storePassword=CHANGE_ME
+keyPassword=CHANGE_ME
+keyAlias=upload
+# Absolute path, or relative to android/app
+storeFile=/Users/you/keys/jeyabo-upload.jks
