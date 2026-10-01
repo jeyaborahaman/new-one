@@ -9,16 +9,12 @@ const { err } = require('../utils/errors');
 router.use(authenticate);
 const idParam = z.object({ id: z.coerce.number().int().positive() });
 
-const setStatus = (status, action) => [validate({ params: idParam }), asyncHandler(async (req, res) => {
-  const u = await db('users').where({ id: req.params.id }).first();
-  if (!u) throw err.notFound('User not found');
-  if (u.role !== 'user') throw err.forbidden('Cannot moderate staff accounts');
-  await db('users').where({ id: u.id }).update({ status });
-  if (status !== 'active') {
-    await db('sessions').where({ user_id: u.id }).whereNull('revoked_at').update({ revoked_at: new Date() });
-    require('../realtime/bus').disconnectUser(u.id);
-  }
-  await db('audit_logs').insert({ actor_id: req.user.id, action, target: `user:${u.id}` });
+const { setUserStatus, audit } = require('./moderation/service');
+// Optional { reason } is kept in the audit log.
+const reasonBody = z.object({ reason: z.string().trim().max(500).optional() }).strict().default({});
+const setStatus = (status, action) => [validate({ params: idParam, body: reasonBody }), asyncHandler(async (req, res) => {
+  const u = await setUserStatus(req.params.id, status);
+  await audit(req.user.id, action, `user:${u.id}`, req.body.reason ? { reason: req.body.reason } : null);
   res.json({ id: u.id, status });
 })];
 

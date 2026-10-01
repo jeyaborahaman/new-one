@@ -35,6 +35,7 @@ function createApp() {
   v1.use('/', require('./modules/search/routes'));
   v1.use('/luckydraw', luckydraw.user);
   v1.use('/admin/luckydraw', luckydraw.admin);
+  v1.use('/admin', require('./modules/moderation/admin'));
   v1.use('/admin', require('./modules/admin'));
   app.use('/v1', v1);
 
